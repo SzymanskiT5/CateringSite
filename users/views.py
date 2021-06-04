@@ -1,19 +1,28 @@
 from django.contrib import messages
 from django.shortcuts import render, redirect
+from django.views.generic.base import View
+
 from users.forms import UserRegisterForm
 
 from django.contrib.auth.views import LogoutView
-def register(request):
-    if request.method == "POST":
+
+class RegisterView(View):
+
+    def post(self, request, *args, **kwargs):
         form = UserRegisterForm(request.POST)
         if form.is_valid():
             form.save()
             messages.success(request, f"Now you can log in!")
             return redirect("login")
 
-    else:
-        form = UserRegisterForm(request.POST)
         return render(request, "users/register.html", {"form": form})
+
+    def get(self, request, *args, **kwargs):
+        form = UserRegisterForm
+        return render(request, "users/register.html", {"form": form})
+
+
+
 
 
 
