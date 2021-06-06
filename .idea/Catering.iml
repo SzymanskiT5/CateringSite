@@ -26,6 +26,7 @@
         <option value="$MODULE_DIR$/catering/templates" />
         <option value="$MODULE_DIR$/contact/templates" />
         <option value="$MODULE_DIR$/users/templates" />
+        <option value="$MODULE_DIR$/menu/templates/menu" />
       </list>
     </option>
   </component>

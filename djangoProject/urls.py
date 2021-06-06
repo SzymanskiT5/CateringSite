@@ -19,6 +19,7 @@ from users import views as user_views
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
+from menu import views as menu_views
 
 
 urlpatterns = [
@@ -29,6 +30,8 @@ urlpatterns = [
     path('login/', auth_views.LoginView.as_view(template_name="users/login.html"), name="login"),
     path('logout/', user_views.MyLogoutView.as_view(),{'next_page': settings.LOGOUT_REDIRECT_URL},
                                                     name="logout"),
+
+    path("offer/", menu_views.MenuListView.as_view(), name="catering-offer")
 ]
 
 if settings.DEBUG:
