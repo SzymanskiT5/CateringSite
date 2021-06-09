@@ -5,10 +5,10 @@
           <img class="img-thumbnail" src="{{ diet.image.url }}">
           <div class="media-body">
 {#            <div class="article-metadata">#}
-{#                       <a class="mr-2" href="{% url "user-posts" post.author.username%}">{{ post.author }}</a>#}
+{#                        <a class="mr-2" href="{% url "offer-details" diet.name %}">{{ diet.name }}</a>#}
 {#              <small class="text-muted">{{ post.date_posted|date:"F d, Y" }}</small>#}
 {#            </div>#}
-            <h2><a class="article-title" href="#">{{ diet.name }}</a></h2>
+            <h2><a class="article-title" href="{% url "offer_detail" diet.id %}">{{ diet.name }}</a></h2>
             <p class="article-content">{{ diet.description }}</p>
           </div>
         </article>

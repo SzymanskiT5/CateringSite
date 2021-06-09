@@ -31,7 +31,8 @@ urlpatterns = [
     path('logout/', user_views.MyLogoutView.as_view(),{'next_page': settings.LOGOUT_REDIRECT_URL},
                                                     name="logout"),
 
-    path("offer/", menu_views.MenuListView.as_view(), name="catering-offer")
+    # path("offer/", menu_views.MenuListView.as_view(), name="catering-offer")
+    path("offer/", include("menu.urls"))
 ]
 
 if settings.DEBUG:

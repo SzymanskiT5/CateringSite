@@ -1,15 +1,29 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.views.generic import DetailView, ListView
 
-from menu.models import Diet
-
+from menu.models import Diet, DietExample
 
 
 class MenuListView(ListView):
-    model=Diet
+    model = Diet
     template_name = "menu/offer.html"
     context_object_name = "diets"
 
 
-class MenuDetailView(DetailView):
+
+
+
+class MenuDetailView (DetailView):
     model = Diet
+    context_object_name = "diet"
+    template_name = "menu/offer_details.html"
+    pk_url_kwarg = "dietid"
+    slug_url_kwarg = 'slug'
+    query_pk_and_slug = True
+
+class DietExampleDetail(DetailView):
+    model = DietExample
+    context_object_name = "dietexample"
+    template_name = "menu/example_diet_table.html"
+
+

@@ -1,0 +1,8 @@
+from django.urls import path, include
+
+from menu.views import MenuDetailView, MenuListView
+
+urlpatterns = [
+    path('', MenuListView.as_view(), name="offer"),
+    path("<slug:dietid>/", MenuDetailView.as_view(), name="offer_detail")
+]

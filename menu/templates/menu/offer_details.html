@@ -1,0 +1,26 @@
+{% extends  "catering/base.html" %}
+
+
+{% block content %}
+
+    <article class="media content-section">
+        <img class="img-thumbnail" src="{{ diet.image.url }}" alt="">
+        <div class="media-body">
+            {#            <div class="article-metadata">#}
+            {#                       <a class="mr-2" href="{% url "user-posts" post.author.username%}">{{ post.author }}</a>#}
+            {#              <small class="text-muted">{{ post.date_posted|date:"F d, Y" }}</small>#}
+            {#            </div>#}
+            <h2><a class="article-title">{{ diet.name }}</a></h2>
+            <p class="article-content">{{ diet.description }}</p>
+        </div>
+    </article>
+
+
+        <h2>Example Menu</h2>
+        {% for meals in diet.dietexample_set.all %}
+
+            {% include 'menu/example_diet_table.html' %}
+
+        {% endfor %}
+
+{% endblock %}
