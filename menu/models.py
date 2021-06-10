@@ -1,14 +1,14 @@
 from PIL import Image
 from django.db import models
 from django.urls import reverse
+from django.utils import timezone
 
 
 class Diet(models.Model):
     name = models.CharField(max_length=30)
     image = models.ImageField(upload_to='diet_images')
     description = models.TextField()
-
-    # calories = models.IntegerField()
+    price = models.FloatField(default=0)
 
     def __str__(self):
         return self.name
@@ -34,3 +34,17 @@ class DietExample(models.Model):
 
     def __str__(self):
         return f"{self.diet} Example"
+
+
+class DietOrder(models.Model):
+    name = models.ForeignKey(Diet, on_delete=models.PROTECT)
+    megabytes = models.IntegerField()
+    days = models.IntegerField()
+    price_per_day = models.ForeignKey(Diet, related_name="diet_order_price", on_delete=models.PROTECT)
+    date_of_start = models.DateTimeField(default=timezone.now)
+
+    def whole_price(self):
+        return self.days * self.price_per_day.price
+
+    def __str__(self):
+        return f"{self.date_of_start}"

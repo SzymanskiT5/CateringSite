@@ -32,7 +32,8 @@ urlpatterns = [
                                                     name="logout"),
 
     # path("offer/", menu_views.MenuListView.as_view(), name="catering-offer")
-    path("offer/", include("menu.urls"))
+    path("offer/", include("menu.urls")),
+    path("cart/",include("shoppingcart.urls"))
 ]
 
 if settings.DEBUG:

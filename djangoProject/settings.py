@@ -39,7 +39,9 @@ INSTALLED_APPS = [
     'contact.apps.ContactConfig',
     'users.apps.UsersConfig',
     'menu.apps.MenuConfig',
-    "crispy_forms"
+    'shoppingcart.apps.ShoppingcartConfig',
+
+    "crispy_forms",
 
 ]
 
@@ -120,11 +122,15 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+STATICFILES_DIRS=[
+    os.path.join(BASE_DIR,'static')
+]
 MEDIA_URL = "/media/"
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = 'catering-home'
 LOGOUT_REDIRECT_URL = 'catering-home'
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 

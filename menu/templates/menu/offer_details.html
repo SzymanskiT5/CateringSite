@@ -6,10 +6,6 @@
     <article class="media content-section">
         <img class="img-thumbnail" src="{{ diet.image.url }}" alt="">
         <div class="media-body">
-            {#            <div class="article-metadata">#}
-            {#                       <a class="mr-2" href="{% url "user-posts" post.author.username%}">{{ post.author }}</a>#}
-            {#              <small class="text-muted">{{ post.date_posted|date:"F d, Y" }}</small>#}
-            {#            </div>#}
             <h2><a class="article-title">{{ diet.name }}</a></h2>
             <p class="article-content">{{ diet.description }}</p>
         </div>
@@ -23,4 +19,6 @@
 
         {% endfor %}
 
+
+  {% include 'menu/diet_order.html' %}
 {% endblock %}

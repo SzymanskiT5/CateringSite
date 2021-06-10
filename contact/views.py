@@ -8,6 +8,7 @@ from .forms import ContactForm
 class ContactView(View):
 
     def get(self, request, *args, **kwargs):
+
         return render(request, "contact/contact.html", {"title": "DjangoCatering-Contact"})
 
     def post(self, request, *args, **kwargs):

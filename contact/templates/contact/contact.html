@@ -7,7 +7,9 @@
 
 	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
 
-	<link rel="stylesheet" href="/contact/static/contact/css/style.css">
+	<link rel="stylesheet" href="{% static 'contact/css/animate.css' %}">
+	<link rel="stylesheet" href="{% static 'contact/css/bootstrap.min.css' %}">
+	<link rel="stylesheet" href="{% static 'contact/css/style.css' %}">
 
 
 {% endblock %}
@@ -86,7 +88,7 @@
 				        			<span class="fa fa-globe"></span>
 				        		</div>
 				        		<div class="text pl-3">
-					            <p><span>Website</span> <a href="https://github.com/SzymanskiT5">https://github.com/SzymanskiT5</a></p>
+					            <p><span>Website:</span> <a href="https://github.com/SzymanskiT5">github.com/SzymanskiT5</a></p>
 					          </div>
 				          </div>
 			          </div>
@@ -98,9 +100,9 @@
 		</div>
 	</section>
 
-	<script src="/contact/static/contact/js/jquery.min.js"></script>
-  <script src="/contact/static/contact/js/popper.js"></script>
-  <script src="/contact/static/contact/js/bootstrap.min.js"></script>
-  <script src="/contact/static/contact/js/jquery.validate.min.js"></script>
-  <script src="/contact/static/contact/js/main.js"></script>
+	<script src="{%  static '/contact/js/jquery.min.js' %}"></script>
+  <script src="{%  static '/contact/js/pooper.js' %}"></script>
+  <script src="{%  static '/contact/js/bootstrap.min.js' %}"></script>
+  <script src="{%  static '/contact/js/jquery.validate.min.js' %}"></script>
+  <script src="{%  static '/contact/js/main.js' %}"></script>
 {% endblock %}
