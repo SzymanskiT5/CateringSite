@@ -1,7 +1,11 @@
+import django
 from PIL import Image
+from django.contrib.auth import get_user_model
 from django.db import models
+from django.http import request
 from django.urls import reverse
 from django.utils import timezone
+from django.contrib.auth.models import User
 
 
 class Diet(models.Model):
@@ -13,8 +17,8 @@ class Diet(models.Model):
     def __str__(self):
         return self.name
 
-    def save(self):
-        super().save()
+    def save(self, *args, **kwargs):
+        super().save(args, kwargs)
 
         img = Image.open(self.image.path)
 
@@ -30,21 +34,9 @@ class DietExample(models.Model):
     third_dish = models.TextField()
     fourth_dish = models.TextField()
     fifth_dish = models.TextField()
-    diet = models.ForeignKey(Diet, on_delete=models.CASCADE)
+    diet = models.ForeignKey(Diet, on_delete=models.PROTECT)
 
     def __str__(self):
         return f"{self.diet} Example"
 
 
-class DietOrder(models.Model):
-    name = models.ForeignKey(Diet, on_delete=models.PROTECT)
-    megabytes = models.IntegerField()
-    days = models.IntegerField()
-    price_per_day = models.ForeignKey(Diet, related_name="diet_order_price", on_delete=models.PROTECT)
-    date_of_start = models.DateTimeField(default=timezone.now)
-
-    def whole_price(self):
-        return self.days * self.price_per_day.price
-
-    def __str__(self):
-        return f"{self.date_of_start}"

@@ -1,9 +1,9 @@
 from django.urls import path, include
 
-from menu.views import MenuDetailView, MenuListView,DietOrderView
+from menu.views import MenuDetailView, MenuListView
 
 urlpatterns = [
     path('', MenuListView.as_view(), name="offer"),
-    # path("<slug:dietid>/", MenuDetailView.as_view(), name="offer_detail"),
-    path("test/", DietOrderView.as_view(), name="test")
+    path("<slug:dietid>/", MenuDetailView.as_view(), name="offer_detail"),
+    # path("test/", DietOrderView.as_view(), name="test")
 ]

@@ -8,6 +8,7 @@
         <div class="media-body">
             <h2><a class="article-title">{{ diet.name }}</a></h2>
             <p class="article-content">{{ diet.description }}</p>
+            <p class="price">{{ diet.price }} PLN per day</p>
         </div>
     </article>
 
@@ -19,6 +20,8 @@
 
         {% endfor %}
 
+   <form action={% url "add_product" %}>
+    <input type="submit" value="Make an Order!" />
+</form>
 
-  {% include 'menu/diet_order.html' %}
 {% endblock %}
