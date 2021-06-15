@@ -7,6 +7,7 @@ from django.shortcuts import render
 from django.views.generic import FormView
 
 from menu.models import Diet
+from shoppingcart.exceptions import OrderDateInPast, OrderDateNotMinimumThreeDays
 from shoppingcart.forms import DietOrderForm
 from shoppingcart.models import DietOrder
 
@@ -26,8 +27,25 @@ class DietOrderView(FormView, UserPassesTestMixin):
         order.whole_price(price_per_day)
         order.save()
 
+    def handle_date_validation(self, order, form, price_per_day):
+
+        try:
+            order.check_if_date_is_past()
+            order.check_if_date_is_three_days_ahead()
+
+        except OrderDateInPast:
+            messages.warning(self.request, "Diet cannot be from past!")
+            return super().form_valid(form)
+
+        except OrderDateNotMinimumThreeDays:
+            messages.warning(self.request, "Diet can start 3 days ahead from today!")
+            return super().form_valid(form)
+
+        messages.success(self.request, "Diet added to your cart!")
+        self.handle_order(order, price_per_day)
+        return super().form_valid(form)
+
     def form_valid(self, form):
-        print(form.cleaned_data)
         name = form.cleaned_data.get("name")
         days = form.cleaned_data.get("days")
         megabytes = form.cleaned_data.get("megabytes")
@@ -38,9 +56,9 @@ class DietOrderView(FormView, UserPassesTestMixin):
         order = DietOrder(name=name, megabytes=megabytes, days=days,
                           date_of_start=date_of_start, user=current_user)
 
-        self.handle_order(order, price_per_day)
-        messages.success(self.request, "Diet added to your cart!")
-        return super().form_valid(form)
+        return self.handle_date_validation(order, form, price_per_day)
+
+
 
     def get_success_url(self):
         return self.request.path
