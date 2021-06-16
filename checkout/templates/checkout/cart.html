@@ -1,24 +1,27 @@
-
 {% extends "catering/base.html" %}
 {% block content %}
 
-{% for order in orders %}
-    <article class="media content-section">
-        <img  src="{{ order.name.image.url }}" alt="">
-        <div class="media-body">
-            <h2><a class="article-title">{{ order.name }}</a></h2>
-            <p class="article-content">First delivery {{ order.date_of_start|date:"F d, Y" }}</p>
-            <p class="article-content">Diet for {{ order.days }} day/s</p>
-            <p class="article-content">Last delivery {{ order.date_of_end }}</p>
-            <p class="price">Price {{ order.price }} PLN </p>
-        </div>
-    </article>
+    {% for order in orders %}
+        <article class="media content-section">
+            <img src="{{ order.name.image.url }}" alt="">
+            <div class="media-body">
+                <h2><a class="article-title">{{ order.name }}</a></h2>
+                <p class="article-content">First delivery {{ order.date_of_start|date:"F d, Y" }}</p>
+                <p class="article-content">Diet for {{ order.days }} day/s</p>
+                <p class="article-content">Last delivery {{ order.date_of_end }}</p>
+                <p class="article-content">Megabytes: {{ order.megabytes }}</p>
+                <p class="price">Price {{ order.price }} PLN </p>
+            </div>
+            <a class="btn btn-secondary btn-sm mt-1 mb-1" href="{% url "order_update" order.user order.id  %}  ">Change </a>
+            <a class="btn btn-danger btn-sm mt-1 mb-1" href="{% url "order_delete" order.user order.id  %}">Delete </a>
+        </article>
     {% endfor %}
 
 
     {% if orders %}
-    <h2>Total Price {{ total_price.price__sum }} PLN</h2>
+        <h4>Total Price {{ total_price.price__sum }} PLN</h4>
     {% else %}
-<h2>Your cart is empty :(</h2>
+        <h4>Your cart is empty :( </h4>
     {% endif %}
+
 {% endblock %}

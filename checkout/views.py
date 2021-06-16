@@ -1,12 +1,8 @@
-import datetime
-import sys
-
 from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from django.contrib.auth.models import User
-from django.http import request
-from django.shortcuts import render, get_object_or_404
-from django.views.generic import FormView, ListView
+from django.urls import reverse
+from django.views.generic import FormView, ListView, UpdateView, DeleteView
 
 from menu.models import Diet
 from checkout.exceptions import OrderDateInPast, OrderDateNotMinimumThreeDays
@@ -25,7 +21,6 @@ class CartView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super(CartView, self).get_context_data(**kwargs)
-        # total_price_query = DietOrder.objects.filter(user=self.request)
         context['total_price'] = DietOrder.objects.filter(user=self.request.user).aggregate(Sum('price'))
 
         return context
@@ -42,7 +37,6 @@ class DietOrderView(FormView):
         order.save()
 
     def handle_date_validation(self, order, form, price_per_day):
-
         try:
             order.check_if_date_is_past()
             order.check_if_date_is_three_days_ahead()
@@ -59,6 +53,7 @@ class DietOrderView(FormView):
         self.handle_order(order, price_per_day)
         return super().form_valid(form)
 
+
     def form_valid(self, form):
         name = form.cleaned_data.get("name")
         days = form.cleaned_data.get("days")
@@ -73,4 +68,36 @@ class DietOrderView(FormView):
         return self.handle_date_validation(order, form, price_per_day)
 
     def get_success_url(self):
-        return self.request.path
+        return reverse('cart')
+
+
+class OrderUpdateView(DietOrderView, UpdateView):
+    form_class = DietOrderForm
+    template_name = "checkout/diet_order.html"
+
+
+    def set_new_values_to_diet(self, name, days, megabytes, date_of_start):
+        new_order = self.object
+        new_order.name = name
+        new_order.days = days
+        new_order.megabytes = megabytes
+        new_order.date_of_start = date_of_start
+        return new_order
+
+
+    def form_valid(self, form):
+        name = form.cleaned_data.get("name")
+        days = form.cleaned_data.get("days")
+        megabytes = form.cleaned_data.get("megabytes")
+        date_of_start = form.cleaned_data.get("date_of_start")
+        diet_object = Diet.objects.filter(name=name).first()
+        price_per_day = diet_object.price
+        new_order = self.set_new_values_to_diet(name, days, megabytes, date_of_start)
+        return self.handle_date_validation(new_order, form, price_per_day)
+
+
+class OrderDeleteView(DeleteView):
+    model = DietOrder
+
+    def get_success_url(self):
+        return reverse('cart')

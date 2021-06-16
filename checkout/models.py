@@ -1,6 +1,7 @@
 import datetime
 from django.contrib.auth.models import User
 from django.db import models
+from django.urls import reverse
 from django.utils import timezone
 from menu.models import Diet
 from checkout.exceptions import OrderDateInPast, OrderDateNotMinimumThreeDays
@@ -29,6 +30,9 @@ class DietOrder(models.Model):
     def check_if_date_is_three_days_ahead(self):
         if self.date_of_start - timezone.now() <= datetime.timedelta(days=3):
             raise OrderDateNotMinimumThreeDays
+
+    def get_absolute_url(self):
+        return reverse("cart", kwargs={"pk": self.pk, "user": self.user})
 
     def __str__(self):
         return f"{self.date_of_start}"
