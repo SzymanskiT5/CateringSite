@@ -1,7 +1,7 @@
 from django import forms
 from django.forms import ModelForm, SelectDateWidget
 
-from shoppingcart.models import DietOrder
+from checkout.models import DietOrder
 
 MEGABYTES_CHOICE = (
     ("1000", 1000),
@@ -16,7 +16,7 @@ MEGABYTES_CHOICE = (
 class DietOrderForm(forms.ModelForm, SelectDateWidget):
     megabytes = forms.ChoiceField(choices=MEGABYTES_CHOICE)
     days = forms.IntegerField(min_value=1)
-    date_of_start = forms.DateField( widget=forms.SelectDateWidget(), )
+    date_of_start = forms.DateTimeField( widget=forms.SelectDateWidget(), )
 
 
     class Meta:

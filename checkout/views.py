@@ -1,26 +1,40 @@
 import datetime
+import sys
 
 from django.contrib import messages
-from django.contrib.auth.mixins import UserPassesTestMixin
+from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
+from django.contrib.auth.models import User
 from django.http import request
-from django.shortcuts import render
-from django.views.generic import FormView
+from django.shortcuts import render, get_object_or_404
+from django.views.generic import FormView, ListView
 
 from menu.models import Diet
-from shoppingcart.exceptions import OrderDateInPast, OrderDateNotMinimumThreeDays
-from shoppingcart.forms import DietOrderForm
-from shoppingcart.models import DietOrder
+from checkout.exceptions import OrderDateInPast, OrderDateNotMinimumThreeDays
+from checkout.forms import DietOrderForm
+from checkout.models import DietOrder
+from django.db.models import Sum
 
 
-def cart(request):
-    return render(request, template_name="shoppingcart/shop.html")
-
-
-class DietOrderView(FormView, UserPassesTestMixin):
+class CartView(ListView):
     model = DietOrder
-    template_name = "shoppingcart/diet_order.html"
-    form_class = DietOrderForm
+    template_name = "checkout/cart.html"
+    context_object_name = "orders"
 
+    def get_queryset(self):
+        return DietOrder.objects.filter(user=self.request.user).order_by("-price")
+
+    def get_context_data(self, **kwargs):
+        context = super(CartView, self).get_context_data(**kwargs)
+        # total_price_query = DietOrder.objects.filter(user=self.request)
+        context['total_price'] = DietOrder.objects.filter(user=self.request.user).aggregate(Sum('price'))
+
+        return context
+
+
+class DietOrderView(FormView):
+    model = DietOrder
+    template_name = "checkout/diet_order.html"
+    form_class = DietOrderForm
 
     def handle_order(self, order, price_per_day):
         order.end_of_the_order()
@@ -57,8 +71,6 @@ class DietOrderView(FormView, UserPassesTestMixin):
                           date_of_start=date_of_start, user=current_user)
 
         return self.handle_date_validation(order, form, price_per_day)
-
-
 
     def get_success_url(self):
         return self.request.path

@@ -33,7 +33,7 @@ urlpatterns = [
 
     # path("offer/", menu_views.MenuListView.as_view(), name="catering-offer")
     path("offer/", include("menu.urls")),
-    path("cart/",include("shoppingcart.urls"))
+    path("cart/", include("checkout.urls"))
 ]
 
 if settings.DEBUG:

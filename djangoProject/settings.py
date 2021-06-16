@@ -39,7 +39,7 @@ INSTALLED_APPS = [
     'contact.apps.ContactConfig',
     'users.apps.UsersConfig',
     'menu.apps.MenuConfig',
-    'shoppingcart.apps.ShoppingcartConfig',
+    'checkout.apps.ShoppingcartConfig',
 
     "crispy_forms",
 

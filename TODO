@@ -1,3 +1,6 @@
 contact form validation
 picture sizing
-date_of_start minimum 3 days ahaed\
+register shows not for logged in
+make everything for not logged user
+make cart only for user
+cart doesnt work for not logged user

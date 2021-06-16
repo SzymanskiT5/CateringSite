@@ -1,0 +1,24 @@
+
+{% extends "catering/base.html" %}
+{% block content %}
+
+{% for order in orders %}
+    <article class="media content-section">
+        <img  src="{{ order.name.image.url }}" alt="">
+        <div class="media-body">
+            <h2><a class="article-title">{{ order.name }}</a></h2>
+            <p class="article-content">First delivery {{ order.date_of_start|date:"F d, Y" }}</p>
+            <p class="article-content">Diet for {{ order.days }} day/s</p>
+            <p class="article-content">Last delivery {{ order.date_of_end }}</p>
+            <p class="price">Price {{ order.price }} PLN </p>
+        </div>
+    </article>
+    {% endfor %}
+
+
+    {% if orders %}
+    <h2>Total Price {{ total_price.price__sum }} PLN</h2>
+    {% else %}
+<h2>Your cart is empty :(</h2>
+    {% endif %}
+{% endblock %}
