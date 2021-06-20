@@ -16,8 +16,9 @@ MEGABYTES_CHOICE = (
 class DietOrderForm(forms.ModelForm, SelectDateWidget):
     megabytes = forms.ChoiceField(choices=MEGABYTES_CHOICE)
     days = forms.IntegerField(min_value=1)
-    date_of_start = forms.DateTimeField(widget=forms.SelectDateWidget(), )
+    date_of_start = forms.DateTimeField(widget=forms.SelectDateWidget())
+
 
     class Meta:
         model = DietOrder
-        fields = ["name", "megabytes", "days", "date_of_start"]
+        fields = ["name", "megabytes", "days", "date_of_start" ]

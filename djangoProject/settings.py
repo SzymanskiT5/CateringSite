@@ -130,6 +130,7 @@ CRISPY_TEMPLATE_PACK = 'bootstrap4'
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = 'catering-home'
 LOGOUT_REDIRECT_URL = 'catering-home'
+GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE MAPS KEY")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field

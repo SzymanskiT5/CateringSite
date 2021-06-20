@@ -15,6 +15,14 @@ class DietOrder(models.Model):
     date_of_start = models.DateTimeField(default=timezone.now)
     user = models.ForeignKey(User, on_delete=models.PROTECT)
     date_of_end = models.DateField()
+    address = models.TextField()
+    address_info = models.TextField()
+    locality = models.TextField()
+    state = models.TextField()
+    post_code = models.TextField()
+    # country = models.TextField()
+    is_finished = models.BooleanField(default=False)
+
 
     def whole_price(self, price_per_day):
         self.price = self.days * price_per_day

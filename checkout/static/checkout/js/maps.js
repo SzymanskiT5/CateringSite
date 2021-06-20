@@ -1,85 +1,83 @@
-var check = false;
+// This sample uses the Places Autocomplete widget to:
+// 1. Help the user select a place
+// 2. Retrieve the address components associated with that place
+// 3. Populate the form fields with those address components.
+// This sample requires the Places library, Maps JavaScript API.
+// Include the libraries=places parameter when you first load the API.
+// For example: <script
+// src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places">
+let autocomplete;
+let address1Field;
+let address2Field;
+let postalField;
 
-function changeVal(el) {
-  var qt = parseFloat(el.parent().children(".qt").html());
-  var price = parseFloat(el.parent().children(".price").html());
-  var eq = Math.round(price * qt * 100) / 100;
-
-  el.parent().children(".full-price").html( eq + "PLN" );
-
-  changeTotal();
+function initAutocomplete() {
+  address1Field = document.querySelector("#ship-address");
+  address2Field = document.querySelector("#address2");
+  postalField = document.querySelector("#postcode");
+  // Create the autocomplete object, restricting the search predictions to
+  // addresses in the US and Canada.
+  autocomplete = new google.maps.places.Autocomplete(address1Field, {
+    componentRestrictions: { country: ["pl", "ca"] },
+    fields: ["address_components", "geometry"],
+    types: ["address"],
+  });
+  address1Field.focus();
+  // When the user selects an address from the drop-down, populate the
+  // address fields in the form.
+  autocomplete.addListener("place_changed", fillInAddress);
 }
 
-function changeTotal() {
+function fillInAddress() {
+  // Get the place details from the autocomplete object.
+  const place = autocomplete.getPlace();
+  let address1 = "";
+  let postcode = "";
 
-  var price = 0;
+  // Get each component of the address from the place details,
+  // and then fill-in the corresponding field on the form.
+  // place.address_components are google.maps.GeocoderAddressComponent objects
+  // which are documented at http://goo.gle/3l5i5Mr
+  for (const component of place.address_components) {
+    const componentType = component.types[0];
 
-  $(".full-price").each(function(index){
-    price += parseFloat($(".full-price").eq(index).html());
-  });
+    switch (componentType) {
+      case "street_number": {
+        address1 = `${component.long_name} ${address1}`;
+        break;
+      }
 
-  price = Math.round(price * 100) / 100;
-  var tax = Math.round(price * 0.05 * 100) / 100
-  var shipping = parseFloat($(".shipping span").html());
-  var fullPrice = Math.round((price + tax + shipping) *100) / 100;
+      case "route": {
+        address1 += component.short_name;
+        break;
+      }
 
-  if(price == 0) {
-    fullPrice = 0;
-  }
+      case "postal_code": {
+        postcode = `${component.long_name}${postcode}`;
+        break;
+      }
 
-  $(".subtotal span").html(price);
-  $(".tax span").html(tax);
-  $(".total span").html(fullPrice);
-}
+      case "postal_code_suffix": {
+        postcode = `${postcode}-${component.long_name}`;
+        break;
+      }
+      case "locality":
+        document.querySelector("#locality").value = component.long_name;
+        break;
 
-$(document).ready(function(){
-
-  $(".remove").click(function(){
-    var el = $(this);
-    el.parent().parent().addClass("removed");
-    window.setTimeout(
-      function(){
-        el.parent().parent().slideUp('fast', function() {
-          el.parent().parent().remove();
-          if($(".product").length == 0) {
-            if(check) {
-              $("#cart").html("<h1>The shop does not function, yet!</h1><p>If you liked my shopping cart, please take a second and heart this Pen on <a href='https://codepen.io/ziga-miklic/pen/xhpob'>CodePen</a>. Thank you!</p>");
-            } else {
-              $("#cart").html("<h1>No products!</h1>");
-            }
-          }
-          changeTotal();
-        });
-      }, 200);
-  });
-
-  $(".qt-plus").click(function(){
-    $(this).parent().children(".qt").html(parseInt($(this).parent().children(".qt").html()) + 1);
-
-    $(this).parent().children(".full-price").addClass("added");
-
-    var el = $(this);
-    window.setTimeout(function(){el.parent().children(".full-price").removeClass("added"); changeVal(el);}, 150);
-  });
-
-  $(".qt-minus").click(function(){
-
-    child = $(this).parent().children(".qt");
-
-    if(parseInt(child.html()) > 1) {
-      child.html(parseInt(child.html()) - 1);
+      case "administrative_area_level_1": {
+        document.querySelector("#state").value = component.short_name;
+        break;
+      }
+      case "country":
+        document.querySelector("#country").value = component.long_name;
+        break;
     }
-
-    $(this).parent().children(".full-price").addClass("minused");
-
-    var el = $(this);
-    window.setTimeout(function(){el.parent().children(".full-price").removeClass("minused"); changeVal(el);}, 150);
-  });
-
-  window.setTimeout(function(){$(".is-open").removeClass("is-open")}, 1200);
-
-  $(".btn").click(function(){
-    check = true;
-    $(".remove").click();
-  });
-});
+  }
+  address1Field.value = address1;
+  postalField.value = postcode;
+  // After filling the form with address components from the Autocomplete
+  // prediction, set cursor focus on the second address line to encourage
+  // entry of subpremise information such as apartment, unit, or floor number.
+  address2Field.focus();
+}

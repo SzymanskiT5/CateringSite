@@ -8,9 +8,15 @@
                 <h2><a class="article-title">{{ order.name }}</a></h2>
                 <p class="article-content">First delivery {{ order.date_of_start|date:"F d, Y" }}</p>
                 <p class="article-content">Diet for {{ order.days }} day/s</p>
+                <p class="article-content">Price per day {{ order.name.price }} PLN</p>
                 <p class="article-content">Last delivery {{ order.date_of_end }}</p>
                 <p class="article-content">Megabytes: {{ order.megabytes }}</p>
                 <p class="price">Price {{ order.price }} PLN </p>
+                DELIVERY
+                <p class="price"> Main address: {{ order.address }} </p>
+                <p class="price"> House number: {{ order.address_info }} </p>
+                <p class="price"> {{ order.post_code}} {{ order.locality}} </p>
+
             </div>
             <a class="btn btn-secondary btn-sm mt-1 mb-1" href="{% url "order_update" order.user order.id  %}  ">Change </a>
             <a class="btn btn-danger btn-sm mt-1 mb-1" href="{% url "order_delete" order.user order.id  %}">Delete </a>
@@ -23,5 +29,10 @@
     {% else %}
         <h4>Your cart is empty :( </h4>
     {% endif %}
+
+
+    <form action={% url "add_product" %}>
+    <input type="submit" value="Make an Order!" />
+</form>
 
 {% endblock %}
