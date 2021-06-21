@@ -28,6 +28,8 @@ class Diet(models.Model):
             img.save(self.image.path)
 
 
+
+
 class DietExample(models.Model):
     first_dish = models.TextField()
     second_dish = models.TextField()
@@ -38,5 +40,7 @@ class DietExample(models.Model):
 
     def __str__(self):
         return f"{self.diet} Example"
+
+
 
 

@@ -12,6 +12,7 @@ let address2Field;
 let postalField;
 
 function initAutocomplete() {
+
   address1Field = document.querySelector("#ship-address");
   address2Field = document.querySelector("#address2");
   postalField = document.querySelector("#postcode");
@@ -19,9 +20,11 @@ function initAutocomplete() {
   // addresses in the US and Canada.
   autocomplete = new google.maps.places.Autocomplete(address1Field, {
     componentRestrictions: { country: ["pl", "ca"] },
-    fields: ["address_components", "geometry"],
+    fields: ["place_id", "address_components", "geometry"],
     types: ["address"],
   });
+  const place = autocomplete.getPlace();
+  id = place.place_id
   address1Field.focus();
   // When the user selects an address from the drop-down, populate the
   // address fields in the form.
@@ -40,6 +43,7 @@ function fillInAddress() {
   // which are documented at http://goo.gle/3l5i5Mr
   for (const component of place.address_components) {
     const componentType = component.types[0];
+      console.log("dupa");
 
     switch (componentType) {
       case "street_number": {

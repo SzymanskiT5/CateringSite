@@ -20,7 +20,6 @@ class DietOrder(models.Model):
     locality = models.TextField()
     state = models.TextField()
     post_code = models.TextField()
-    # country = models.TextField()
     is_finished = models.BooleanField(default=False)
 
 

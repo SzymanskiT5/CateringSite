@@ -21,4 +21,4 @@ class DietOrderForm(forms.ModelForm, SelectDateWidget):
 
     class Meta:
         model = DietOrder
-        fields = ["name", "megabytes", "days", "date_of_start" ]
+        fields = ["name", "megabytes", "days", "date_of_start","address", "address_info", "locality", "state", "post_code" ]
