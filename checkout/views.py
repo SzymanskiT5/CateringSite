@@ -15,6 +15,7 @@ from checkout.models import DietOrder
 from django.db.models import Sum
 import pytz
 
+
 class CartView(ListView):
     model = DietOrder
     template_name = "checkout/cart.html"
@@ -31,6 +32,7 @@ class CartView(ListView):
 
 
 class DietOrderView(View):
+    model = DietOrder
 
     def handle_order(self, order, price_per_day):
         order.end_of_the_order()
@@ -40,15 +42,15 @@ class DietOrderView(View):
         try:
             order.check_if_date_is_past()
             order.check_if_date_is_three_days_ahead()
-            return self.save_order(order)
+
 
         except OrderDateInPast:
             messages.warning(self.request, "Diet cannot be from past!")
-            return render(self.request, "checkout/maps.html")
+            return render(self.request, "checkout/diet_order.html")
 
         except OrderDateNotMinimumThreeDays:
             messages.warning(self.request, "Diet can start 3 days ahead from today!")
-            return render(self.request, "checkout/maps.html")
+            return render(self.request, "checkout/diet_order.html")
 
     def save_order(self, order):
         order.save()
@@ -91,45 +93,43 @@ class DietOrderView(View):
         return order
 
     def get(self, request, *args, **kwargs):
-        return render(request, "checkout/maps.html", {"title": "DjangoCatering-Order"})
+        return render(request, "checkout/diet_order.html", {"title": "DjangoCatering-Order"})
 
     def post(self, request, *args, **kwargs):
         order = self.create_order_object()
-        return self.handle_date_validation(order)
+        self.handle_date_validation(order)
+        return self.save_order(order)
+
 
 
 class OrderUpdateView(DietOrderView, UpdateView):
-    template_name = "checkout/diet_order_update.html"
+    model = DietOrder
 
-    def set_new_values_to_diet(self, name, days, megabytes, date_of_start, address,
-                               address_info, locality, state, post_code):
-        new_order = self.object
-        new_order.name = name
-        new_order.days = days
-        new_order.megabytes = megabytes
-        new_order.date_of_start = date_of_start
-        new_order.address = address
-        new_order.address_info = address_info
-        new_order.locality = locality
-        new_order.state = state
-        new_order.post_code = post_code
-        return new_order
 
-    def form_valid(self, form):
-        name = form.cleaned_data.get("name")
-        days = form.cleaned_data.get("days")
-        megabytes = form.cleaned_data.get("megabytes")
-        date_of_start = form.cleaned_data.get("date_of_start")
+    def update_order(self):
+        order = self.get_object()
+        name = self.request.POST.get("name")
+        order.days = int(self.request.POST.get("days"))
+        order.megabytes = self.request.POST.get("megabytes")
+        order.address = self.request.POST.get("ship-address")
+        order.address_info = self.request.POST.get("address_info")
+        order.locality = self.request.POST.get("locality")
+        order.state = self.request.POST.get("state")
+        order.post_code = self.request.POST.get("post_code")
+        order.date_of_start = self.create_date_time_from_request()
         diet_object = Diet.objects.filter(name=name).first()
-        price_per_day = diet_object.price
-        address = self.request.POST.get("ship-address")
-        address_info = self.request.POST.get("address_info")
-        locality = self.request.POST.get("state")
-        state = self.request.POST.get("state")
-        post_code = self.request.POST.get("post_code")
-        new_order = self.set_new_values_to_diet(name, days, megabytes, date_of_start,
-                                                address, address_info, locality, state, post_code)
-        return self.handle_date_validation(new_order, form, price_per_day)
+        order.name = diet_object
+
+        order.price_per_day = diet_object.price
+        return order
+
+
+    def post(self, request, *args, **kwargs):
+        new_order = self.update_order()
+        self.handle_date_validation(new_order)
+        return self.save_order(new_order)
+
+
 
 
 class OrderDeleteView(DeleteView):
