@@ -1,4 +1,5 @@
 import datetime
+
 from django.contrib.auth.models import User
 from django.db import models
 from django.urls import reverse
@@ -12,9 +13,9 @@ class DietOrder(models.Model):
     megabytes = models.IntegerField()
     days = models.IntegerField(null=True)
     price = models.FloatField(null=True)
-    date_of_start = models.DateTimeField(default=timezone.now)
+    date_of_start = models.DateTimeField(default = timezone.now)
     user = models.ForeignKey(User, on_delete=models.PROTECT)
-    date_of_end = models.DateField()
+    date_of_end = models.DateTimeField()
     address = models.TextField()
     address_info = models.TextField()
     locality = models.TextField()
