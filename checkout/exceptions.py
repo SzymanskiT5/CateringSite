@@ -3,3 +3,7 @@ class OrderDateInPast(Exception):
 
 class OrderDateNotMinimumThreeDays(Exception):
     pass
+
+
+class TooLongDistance(Exception):
+    pass

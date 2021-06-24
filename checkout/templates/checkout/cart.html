@@ -8,10 +8,11 @@
                 <h2><a class="article-title">{{ order.name }}</a></h2>
                 <p class="article-content">First delivery {{ order.date_of_start|date:"F d, Y" }}</p>
                 <p class="article-content">Diet for {{ order.days }} day/s</p>
-                <p class="article-content">Price per day {{ order.name.price }} PLN</p>
+                <p class="article-content">Price per day {{ order.diet_cost_per_day }} PLN</p>
                 <p class="article-content">Last delivery {{ order.date_of_end|date:"F d, Y" }}</p>
                 <p class="article-content">Megabytes: {{ order.megabytes }}</p>
-                <p class="price">Price {{ order.price }} PLN </p>
+                <p class="article-content">Delivery costs: {{ order.delivery_cost }}</p>
+                <p class="price">Price {{ order.to_pay }} PLN </p>
                 <h2>DELIVERY</h2>
                 <p class="price"> Main address: {{ order.address }} </p>
                 <p class="price"> House number: {{ order.address_info }} </p>

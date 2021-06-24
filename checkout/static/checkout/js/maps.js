@@ -11,6 +11,8 @@ let address1Field;
 let address2Field;
 let postalField;
 
+
+
 function initAutocomplete() {
 
   address1Field = document.querySelector("#ship-address");
@@ -23,8 +25,10 @@ function initAutocomplete() {
     fields: ["place_id", "address_components", "geometry"],
     types: ["address"],
   });
-  const place = autocomplete.getPlace();
-  id = place.place_id
+  // const place = autocomplete.getPlace();
+  // test_id = place.place_id
+  // console.log(test_id)
+
   address1Field.focus();
   // When the user selects an address from the drop-down, populate the
   // address fields in the form.
@@ -36,6 +40,8 @@ function fillInAddress() {
   const place = autocomplete.getPlace();
   let address1 = "";
   let postcode = "";
+
+
 
   // Get each component of the address from the place details,
   // and then fill-in the corresponding field on the form.
@@ -85,3 +91,11 @@ function fillInAddress() {
   // entry of subpremise information such as apartment, unit, or floor number.
   address2Field.focus();
 }
+
+
+// let button = document.getElementById("button")
+//
+// button.onclick = function(){
+//
+//   console.log("dupa")
+// }

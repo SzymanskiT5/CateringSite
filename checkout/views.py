@@ -1,4 +1,7 @@
+import json
 from datetime import datetime, timezone
+
+import requests
 from django.utils import timezone as djangozone
 from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
@@ -7,9 +10,11 @@ from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views.generic import FormView, ListView, UpdateView, DeleteView
 from django.views.generic.base import View
+from requests import Response
 
+from djangoProject.settings import GOOGLE_MAPS_API_KEY, CATERING_PLACE_ID
 from menu.models import Diet
-from checkout.exceptions import OrderDateInPast, OrderDateNotMinimumThreeDays
+from checkout.exceptions import OrderDateInPast, OrderDateNotMinimumThreeDays, TooLongDistance
 from checkout.forms import DietOrderForm
 from checkout.models import DietOrder
 from django.db.models import Sum
@@ -22,11 +27,11 @@ class CartView(ListView):
     context_object_name = "orders"
 
     def get_queryset(self):
-        return DietOrder.objects.filter(user=self.request.user).order_by("-price")
+        return DietOrder.objects.filter(user=self.request.user).order_by("-to_pay")
 
     def get_context_data(self, **kwargs):
         context = super(CartView, self).get_context_data(**kwargs)
-        context['total_price'] = DietOrder.objects.filter(user=self.request.user).aggregate(Sum('price'))
+        context['total_price'] = DietOrder.objects.filter(user=self.request.user).aggregate(Sum('to_pay'))
 
         return context
 
@@ -34,15 +39,15 @@ class CartView(ListView):
 class DietOrderView(View):
     model = DietOrder
 
-    def handle_order(self, order, price_per_day):
-        order.end_of_the_order()
-        order.whole_price(price_per_day)
-
-    def handle_date_validation(self, order):
+    def handle_order_validation(self, order):
         try:
+            order.calculate_extra_costs_for_delivery_per_day()
+            order.calculate_delivery_cost()
+            order.calculate_whole_price()
+        
             order.check_if_date_is_past()
             order.check_if_date_is_three_days_ahead()
-
+            return self.save_order(order)
 
         except OrderDateInPast:
             messages.warning(self.request, "Diet cannot be from past!")
@@ -50,6 +55,10 @@ class DietOrderView(View):
 
         except OrderDateNotMinimumThreeDays:
             messages.warning(self.request, "Diet can start 3 days ahead from today!")
+            return render(self.request, "checkout/diet_order.html")
+
+        except TooLongDistance:
+            messages.warning(self.request, "We don't delivery to this destination, it's more than 10 km")
             return render(self.request, "checkout/diet_order.html")
 
     def save_order(self, order):
@@ -65,6 +74,24 @@ class DietOrderView(View):
         date_of_start = pytz.utc.localize(date_of_start)
         return date_of_start
 
+    def get_place_id(self, address, address_info):
+        parameteres = {"input": address + " " + address_info, "key": GOOGLE_MAPS_API_KEY}
+        localization_api_call = requests.get("https://maps.googleapis.com/maps/api/place/autocomplete/json",
+                                             params=parameteres).text
+        json_object = json.loads(localization_api_call)
+        place_id = json_object["predictions"][0]["place_id"]
+        return place_id
+
+    def calculate_distance_between_order_and_catering(self, place_id):
+        parameters = {"origin": f"place_id:{CATERING_PLACE_ID}", "destination": f"place_id:{place_id}",
+                      "key": f"{GOOGLE_MAPS_API_KEY}"}
+        distance_api_call = requests.get("https://maps.googleapis.com/maps/api/directions/json?",
+                                         params=parameters).text
+        json_object = json.loads(distance_api_call)
+        distance = json_object['routes'][0]['legs'][0]['distance']['value']
+        distance = int(distance) / 1000
+        return distance
+
     def create_order_object(self):
         name = self.request.POST.get("name")
         days = int(self.request.POST.get("days"))
@@ -78,7 +105,9 @@ class DietOrderView(View):
         diet_object = Diet.objects.filter(name=name).first()
         price_per_day = diet_object.price
         current_user = self.request.user
-
+        place_id = self.get_place_id(address, address_info)
+        distance = self.calculate_distance_between_order_and_catering(place_id)
+        print(distance)
         order = DietOrder(name=diet_object,
                           megabytes=megabytes,
                           days=days,
@@ -88,8 +117,14 @@ class DietOrderView(View):
                           address_info=address_info,
                           locality=locality,
                           state=state,
-                          post_code=post_code)
-        self.handle_order(order, price_per_day)
+                          post_code=post_code,
+                          distance=distance,
+                          diet_cost_per_day=price_per_day,
+                          )
+        order.end_of_the_order()
+        order.calculate_diet_cost()
+
+
         return order
 
     def get(self, request, *args, **kwargs):
@@ -97,14 +132,11 @@ class DietOrderView(View):
 
     def post(self, request, *args, **kwargs):
         order = self.create_order_object()
-        self.handle_date_validation(order)
-        return self.save_order(order)
-
+        return self.handle_order_validation(order)
 
 
 class OrderUpdateView(DietOrderView, UpdateView):
     model = DietOrder
-
 
     def update_order(self):
         order = self.get_object()
@@ -120,16 +152,13 @@ class OrderUpdateView(DietOrderView, UpdateView):
         diet_object = Diet.objects.filter(name=name).first()
         order.name = diet_object
 
-        order.price_per_day = diet_object.price
+        order.price_per_day = diet_object.to_pay
         return order
-
 
     def post(self, request, *args, **kwargs):
         new_order = self.update_order()
         self.handle_date_validation(new_order)
         return self.save_order(new_order)
-
-
 
 
 class OrderDeleteView(DeleteView):
