@@ -36,7 +36,6 @@ class DietOrder(models.Model):
         self.diet_cost = self.days * self.diet_cost_per_day
 
     def calculate_delivery_cost(self):
-        print(self.delivery_cost_per_day)
         self.delivery_cost = self.delivery_cost_per_day * self.days
 
     def end_of_the_order(self):
@@ -52,7 +51,6 @@ class DietOrder(models.Model):
             raise OrderDateNotMinimumThreeDays
 
     def calculate_extra_costs_for_delivery_per_day(self):
-        print(self.distance)
         if self.distance > 10:
             raise TooLongDistance
         elif 10 > self.distance > 5:

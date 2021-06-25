@@ -18,7 +18,8 @@
 
     <!-- Async script executes immediately and must be after any DOM elements used in callback. -->
     <script
-            src="https://maps.googleapis.com/maps/api/js?key=&callback=initAutocomplete&libraries=places&v=weekly"
+            src="https://maps.googleapis.com/maps/api/js?key={{ api_key }}&callback=initAutocomplete&libraries=places&v=weekly"
+
             async
     ></script>
 
@@ -159,7 +160,7 @@
             <span class="form-label">Postal code*</span>
             <input id="post_code" name="post_code" required/>
         </label>
-        <button id="button" type="submit" form="address-form" class="my-button" >Save address</button>
+        <button id="button" type="submit" form="address-form" class="my-button">Save address</button>
 
     </form>
 

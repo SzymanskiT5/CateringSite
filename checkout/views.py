@@ -38,13 +38,14 @@ class CartView(ListView):
 
 class DietOrderView(View):
     model = DietOrder
+    template_name = "checkout/diet_order.html"
 
     def handle_order_validation(self, order):
         try:
             order.calculate_extra_costs_for_delivery_per_day()
             order.calculate_delivery_cost()
             order.calculate_whole_price()
-        
+
             order.check_if_date_is_past()
             order.check_if_date_is_three_days_ahead()
             return self.save_order(order)
@@ -107,7 +108,6 @@ class DietOrderView(View):
         current_user = self.request.user
         place_id = self.get_place_id(address, address_info)
         distance = self.calculate_distance_between_order_and_catering(place_id)
-        print(distance)
         order = DietOrder(name=diet_object,
                           megabytes=megabytes,
                           days=days,
@@ -127,8 +127,11 @@ class DietOrderView(View):
 
         return order
 
+
+
+
     def get(self, request, *args, **kwargs):
-        return render(request, "checkout/diet_order.html", {"title": "DjangoCatering-Order"})
+        return render(request, "checkout/diet_order.html", {"title": "DjangoCatering-Order", "api_key":GOOGLE_MAPS_API_KEY})
 
     def post(self, request, *args, **kwargs):
         order = self.create_order_object()
@@ -137,6 +140,8 @@ class DietOrderView(View):
 
 class OrderUpdateView(DietOrderView, UpdateView):
     model = DietOrder
+    # template_name = "checkout/diet_order_update.html"
+
 
     def update_order(self):
         order = self.get_object()
@@ -149,16 +154,27 @@ class OrderUpdateView(DietOrderView, UpdateView):
         order.state = self.request.POST.get("state")
         order.post_code = self.request.POST.get("post_code")
         order.date_of_start = self.create_date_time_from_request()
+        place_id = self.get_place_id(order.address, order.address_info)
+        distance = self.calculate_distance_between_order_and_catering(place_id)
         diet_object = Diet.objects.filter(name=name).first()
         order.name = diet_object
+        order.diet_cost_per_day = diet_object.price
+        order.distance = distance
+        order.end_of_the_order()
+        order.calculate_diet_cost()
 
-        order.price_per_day = diet_object.to_pay
         return order
+
+
+
+    def get(self, request, *args, **kwargs):
+        return render(request, "checkout/diet_order_update.html", {"title": "Change Order","api_key":GOOGLE_MAPS_API_KEY,"order":self.get_object()})
+
+
 
     def post(self, request, *args, **kwargs):
         new_order = self.update_order()
-        self.handle_date_validation(new_order)
-        return self.save_order(new_order)
+        return self.handle_order_validation(new_order)
 
 
 class OrderDeleteView(DeleteView):

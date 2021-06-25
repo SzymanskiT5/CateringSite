@@ -18,7 +18,7 @@
 
     <!-- Async script executes immediately and must be after any DOM elements used in callback. -->
     <script
-            src="https://maps.googleapis.com/maps/api/js?key=&callback=initAutocomplete&libraries=places&v=weekly"
+            src="https://maps.googleapis.com/maps/api/js?key={{ api_key }}&callback=initAutocomplete&libraries=places&v=weekly"
             async
     ></script>
 
@@ -29,11 +29,11 @@
     <form id="address-form" action="" method="post" autocomplete="off">
 
         {% csrf_token %}
-        <div id="div_id_name" class="form-group"><label for="id_name" class=" requiredField">
+        <div id="div_id_name" value="{{ order.name }}" class="form-group"><label for="id_name"
+                                                                                 class=" requiredField">
             Name <span class="asteriskField">*</span> </label>
             <div class="">
                 <select name="name" class="select form-control" required id="id_name">
-                    <option value="" selected>---------</option>
                     <option value="DataScience Diet">DataScience Diet</option>
                     <option value="WebDeveloper Diet">WebDeveloper Diet</option>
                     <option value="Tester Diet">Tester Diet</option>
@@ -41,7 +41,8 @@
             </div>
         </div>
 
-        <div id="div_id_megabytes" class="form-group"><label for="id_megabytes" class=" requiredField">
+        <div id="div_id_megabytes" value="{{ order.megabytes }}" class="form-group"><label for="id_megabytes"
+                                                                                           class=" requiredField">
             Megabytes<span class="asteriskField">*</span> </label>
             <div class=""><select name="megabytes" class="select form-control" id="id_megabytes">
                 <option value="1000">1000</option>
@@ -57,14 +58,16 @@
         <div id="div_id_days" class="form-group"><label for="id_days" class=" requiredField">
             Days<span class="asteriskField">*</span> </label>
             <div class="">
-                <input type="number" name="days" min="1" class="numberinput form-control" required id="id_days">
+                <input type="number" value="{{ order.days }}" name="days" min="1" class="numberinput form-control"
+                       required id="id_days">
             </div>
         </div>
 
-        <div id="div_id_date_of_start" class="form-group"><label for="id_date_of_start_month" class=" requiredField">
+        <div id="div_id_date_of_start"  class="form-group"><label for="id_date_of_start_month" class=" requiredField">
             Date of start<span class="asteriskField">*</span> </label>
             <div class="">
-                <select name="date_of_start_month" required id="id_date_of_start_month"
+                <select name="date_of_start_month" required
+                        id="id_date_of_start_month"
                         class="selectdatewidget form-control">
                     <option value="01">January</option>
                     <option value="02">February</option>
@@ -80,7 +83,8 @@
                     <option value="12">December</option>
                 </select>
 
-                <select name="date_of_start_day" required id="id_date_of_start_day"
+                <select name="date_of_start_day"  required
+                        id="id_date_of_start_day"
                         class="selectdatewidget form-control">
                     <option value="01">1</option>
                     <option value="02">2</option>
@@ -114,7 +118,10 @@
                     <option value="30">30</option>
                     <option value="31">31</option>
                 </select>
-                <select name="date_of_start_year" required id="id_date_of_start_year"
+
+
+                <select name="date_of_start_year"  required
+                        id="id_date_of_start_year"
                         class="selectdatewidget form-control">
                     <option value="2021">2021</option>
                     <option value="2022">2022</option>
@@ -141,27 +148,27 @@
                     name="ship-address"
                     required
                     autocomplete="off"
+                    value="{{ order.address }}"
 
             />
         </label>
         <label class="full-field">
             <span class="form-label">Apartment, unit, suite, or floor #</span>
-            <input id="address_info" name="address_info"/>
+            <input id="address_info" name="address_info" value="{{ order.address_info }}" required/>
         </label>
         <label class="full-field">
             <span class="form-label">City*</span>
-            <input id="locality" name="locality" required/>
+            <input id="locality" name="locality" value="{{ order.locality }}" required/>
         </label>
         <label class="slim-field-left">
             <span class="form-label">State/Province*</span>
-            <input id="state" name="state" required/>
+            <input id="state" name="state" value="{{ order.state }}" required/>
         </label>
         <label class="slim-field-right" for="postal_code">
             <span class="form-label">Postal code*</span>
-            <input id="post_code" name="post_code" required/>
+            <input id="post_code" value="{{ order.post_code }}" name="post_code" required/>
         </label>
         <button type="submit" form="address-form" class="my-button">Save address</button>
 
     </form>
-
 {% endblock %}

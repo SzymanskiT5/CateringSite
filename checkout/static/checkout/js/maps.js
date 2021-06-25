@@ -11,24 +11,17 @@ let address1Field;
 let address2Field;
 let postalField;
 
-
-
 function initAutocomplete() {
-
   address1Field = document.querySelector("#ship-address");
   address2Field = document.querySelector("#address2");
   postalField = document.querySelector("#postcode");
   // Create the autocomplete object, restricting the search predictions to
   // addresses in the US and Canada.
   autocomplete = new google.maps.places.Autocomplete(address1Field, {
-    componentRestrictions: { country: ["pl", "ca"] },
-    fields: ["place_id", "address_components", "geometry"],
+    componentRestrictions: { country: ["us", "ca"] },
+    fields: ["address_components", "geometry"],
     types: ["address"],
   });
-  // const place = autocomplete.getPlace();
-  // test_id = place.place_id
-  // console.log(test_id)
-
   address1Field.focus();
   // When the user selects an address from the drop-down, populate the
   // address fields in the form.
@@ -41,15 +34,12 @@ function fillInAddress() {
   let address1 = "";
   let postcode = "";
 
-
-
   // Get each component of the address from the place details,
   // and then fill-in the corresponding field on the form.
   // place.address_components are google.maps.GeocoderAddressComponent objects
   // which are documented at http://goo.gle/3l5i5Mr
   for (const component of place.address_components) {
     const componentType = component.types[0];
-      console.log("dupa");
 
     switch (componentType) {
       case "street_number": {
@@ -91,11 +81,3 @@ function fillInAddress() {
   // entry of subpremise information such as apartment, unit, or floor number.
   address2Field.focus();
 }
-
-
-// let button = document.getElementById("button")
-//
-// button.onclick = function(){
-//
-//   console.log("dupa")
-// }
