@@ -2,6 +2,8 @@ import json
 from datetime import datetime, timezone
 
 import requests
+from django.core.exceptions import PermissionDenied
+from django.http import Http404
 from django.utils import timezone as djangozone
 from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
@@ -138,9 +140,9 @@ class DietOrderView(View):
         return self.handle_order_validation(order)
 
 
-class OrderUpdateView(DietOrderView, UpdateView):
+class OrderUpdateView(LoginRequiredMixin , UserPassesTestMixin, DietOrderView, UpdateView):
     model = DietOrder
-    # template_name = "checkout/diet_order_update.html"
+   
 
 
     def update_order(self):
@@ -175,6 +177,12 @@ class OrderUpdateView(DietOrderView, UpdateView):
     def post(self, request, *args, **kwargs):
         new_order = self.update_order()
         return self.handle_order_validation(new_order)
+
+    def test_func(self):
+        order = self.get_object()
+        if not self.request.user == order.user:
+            raise Http404 ("Page not Found")
+        return True
 
 
 class OrderDeleteView(DeleteView):
