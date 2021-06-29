@@ -10,15 +10,15 @@ from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.shortcuts import render, redirect
 from django.urls import reverse
-from django.views.generic import FormView, ListView, UpdateView, DeleteView
+from django.views.generic import FormView, ListView, UpdateView, DeleteView, CreateView
 from django.views.generic.base import View
 from requests import Response
 
 from djangoProject.settings import GOOGLE_MAPS_API_KEY, CATERING_PLACE_ID
 from menu.models import Diet
 from checkout.exceptions import OrderDateInPast, OrderDateNotMinimumThreeDays, TooLongDistance
-from checkout.forms import DietOrderForm
-from checkout.models import DietOrder
+from checkout.forms import DietOrderForm, PurchaserInfoForm, OrderConfirmedForm
+from checkout.models import DietOrder, PurchaserInfo, OrderConfirmed
 from django.db.models import Sum
 import pytz
 
@@ -29,11 +29,12 @@ class CartView(ListView):
     context_object_name = "orders"
 
     def get_queryset(self):
-        return DietOrder.objects.filter(user=self.request.user).order_by("-to_pay")
+        return DietOrder.objects.filter(user=self.request.user).filter(is_purchased=False).order_by("-to_pay")
 
     def get_context_data(self, **kwargs):
         context = super(CartView, self).get_context_data(**kwargs)
-        context['total_price'] = DietOrder.objects.filter(user=self.request.user).aggregate(Sum('to_pay'))
+        context['total_price'] = DietOrder.objects.filter(user=self.request.user).filter(is_purchased=False).aggregate(
+            Sum('to_pay'))
 
         return context
 
@@ -126,24 +127,19 @@ class DietOrderView(View):
         order.end_of_the_order()
         order.calculate_diet_cost()
 
-
         return order
 
-
-
-
     def get(self, request, *args, **kwargs):
-        return render(request, "checkout/diet_order.html", {"title": "DjangoCatering-Order", "api_key":GOOGLE_MAPS_API_KEY})
+        return render(request, "checkout/diet_order.html",
+                      {"title": "DjangoCatering-Order", "api_key": GOOGLE_MAPS_API_KEY})
 
     def post(self, request, *args, **kwargs):
         order = self.create_order_object()
         return self.handle_order_validation(order)
 
 
-class OrderUpdateView(LoginRequiredMixin , UserPassesTestMixin, DietOrderView, UpdateView):
+class OrderUpdateView(LoginRequiredMixin, UserPassesTestMixin, DietOrderView, UpdateView):
     model = DietOrder
-   
-
 
     def update_order(self):
         order = self.get_object()
@@ -167,12 +163,9 @@ class OrderUpdateView(LoginRequiredMixin , UserPassesTestMixin, DietOrderView, U
 
         return order
 
-
-
     def get(self, request, *args, **kwargs):
-        return render(request, "checkout/diet_order_update.html", {"title": "Change Order","api_key":GOOGLE_MAPS_API_KEY,"order":self.get_object()})
-
-
+        return render(request, "checkout/diet_order_update.html",
+                      {"title": "Change Order", "api_key": GOOGLE_MAPS_API_KEY, "order": self.get_object()})
 
     def post(self, request, *args, **kwargs):
         new_order = self.update_order()
@@ -181,7 +174,7 @@ class OrderUpdateView(LoginRequiredMixin , UserPassesTestMixin, DietOrderView, U
     def test_func(self):
         order = self.get_object()
         if not self.request.user == order.user:
-            raise Http404 ("Page not Found")
+            raise Http404("Page not Found")
         return True
 
 
@@ -190,3 +183,43 @@ class OrderDeleteView(DeleteView):
 
     def get_success_url(self):
         return reverse('cart')
+
+
+class CheckoutView(View):
+    template_name = "checkout/checkout.html"
+
+    def get(self, *args, **kwargs):
+        instance = PurchaserInfo.objects.filter(user=self.request.user).first()
+        purchaser_info_form = PurchaserInfoForm(instance=instance)
+        order_confirmed_form = OrderConfirmedForm()
+
+        return render(self.request, "checkout/checkout.html", {"title": "DjangoCatering-Checkout",
+                                                               "order_confirmed_form": order_confirmed_form,
+                                                               "purchaser_info_form": purchaser_info_form})
+    def post(self, *args, **kwargs):
+        instance = PurchaserInfo.objects.filter(user=self.request.user).first()
+        purchaser_info_form = PurchaserInfoForm(self.request.POST, instance=instance)
+        order_confirmed_form = OrderConfirmedForm(self.request.POST)
+        purchaser_info_form.instance.user = self.request.user
+        order_confirmed_form.instance.user = self.request.user
+
+        if purchaser_info_form.is_valid() and order_confirmed_form.is_valid():
+            purchaser_info_form.save()
+            order_confirmed_object = order_confirmed_form.save()
+            self.set_order_confirmed_to_pay(order_confirmed_object)
+            self.set_diet_order_fields(order_confirmed_object)
+
+        return redirect('cart')
+
+    def set_order_confirmed_to_pay(self, order_confirmed_object):
+        order_confirmed_object.to_pay = DietOrder.objects \
+            .filter(user=self.request.user). \
+            filter(is_purchased=False).aggregate(Sum('to_pay')).get('to_pay__sum')
+        order_confirmed_object.save()
+
+    def set_diet_order_fields(self, order_confirmed_object):
+        orders = list((DietOrder.objects.filter(user=self.request.user).filter(is_purchased=False).all()))
+        for order in orders:
+            order.is_purchased = True
+            order.confirmed_order = order_confirmed_object
+            order.save()

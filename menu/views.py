@@ -17,9 +17,8 @@ class MenuDetailView(DetailView):
     model = Diet
     context_object_name = "diet"
     template_name = "menu/offer_details.html"
-    pk_url_kwarg = "dietid"
-    slug_url_kwarg = 'slug'
-    query_pk_and_slug = True
+    slug_url_kwarg = 'dietname'
+    slug_field = 'slug'
 
 
 class DietExampleDetail(DetailView):

@@ -30,8 +30,6 @@ urlpatterns = [
     path('login/', auth_views.LoginView.as_view(template_name="users/login.html"), name="login"),
     path('logout/', user_views.MyLogoutView.as_view(),{'next_page': settings.LOGOUT_REDIRECT_URL},
                                                     name="logout"),
-
-    # path("offer/", menu_views.MenuListView.as_view(), name="catering-offer")
     path("offer/", include("menu.urls")),
     path("cart/", include("checkout.urls"))
 ]

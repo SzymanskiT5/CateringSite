@@ -1,3 +1,6 @@
-django
+django~=3.2.4
 django-crispy-forms
-Pillow
+Pillow~=8.2.0
+
+requests~=2.25.1
+pytz~=2021.1

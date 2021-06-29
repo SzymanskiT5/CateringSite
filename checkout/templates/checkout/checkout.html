@@ -1,0 +1,21 @@
+{% extends "catering/base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+    <form method="POST">
+        {% csrf_token %}
+
+
+        {{ purchaser_info_form|crispy }}
+
+        {{ order_confirmed_form|crispy }}
+        <div class="form-group">
+            <button class="btn-outline-info" type="submit">Purchase</button>
+
+        </div>
+        <div>
+    <img class="img-thumbnail" src="{% static  "/checkout/images/transfer.png" %}">
+        </div>
+    </form>
+{% endblock %}

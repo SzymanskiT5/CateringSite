@@ -6,6 +6,7 @@ from django.http import request
 from django.urls import reverse
 from django.utils import timezone
 from django.contrib.auth.models import User
+from django.utils.text import slugify
 
 
 class Diet(models.Model):
@@ -13,13 +14,13 @@ class Diet(models.Model):
     image = models.ImageField(upload_to='diet_images')
     description = models.TextField()
     price = models.FloatField(default=0)
+    slug = models.SlugField(null=True)
 
     def __str__(self):
         return self.name
 
     def save(self, *args, **kwargs):
-        super().save(args, kwargs)
-
+        self.slug = slugify(self.name)
         img = Image.open(self.image.path)
 
         if img.height > 300 or img.width > 300:
@@ -27,6 +28,7 @@ class Diet(models.Model):
             img.thumbnail(output_size)
             img.save(self.image.path)
 
+        super().save(*args, **kwargs)
 
 
 

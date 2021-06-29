@@ -7,6 +7,18 @@ from django.utils import timezone
 from menu.models import Diet
 from checkout.exceptions import OrderDateInPast, OrderDateNotMinimumThreeDays, TooLongDistance
 
+class OrderConfirmed(models.Model):
+    user = models.ForeignKey(User, on_delete=models.PROTECT)
+    date_of_purchase = models.DateTimeField(default= timezone.now)
+    payment_method = models.TextField()
+    to_pay = models.FloatField(null=True)
+
+
+    def __str__(self):
+        return f"{self.user} {self.date_of_purchase}, {self.payment_method}"
+
+
+
 
 class DietOrder(models.Model):
     name = models.ForeignKey(Diet, on_delete=models.PROTECT)
@@ -17,7 +29,7 @@ class DietOrder(models.Model):
     diet_cost = models.FloatField(null=True)
     delivery_cost_per_day = models.FloatField(null=True)
     diet_cost_per_day = models.FloatField()
-    date_of_start = models.DateTimeField(default = timezone.now)
+    date_of_start = models.DateTimeField(default=timezone.now)
     user = models.ForeignKey(User, on_delete=models.PROTECT)
     date_of_end = models.DateTimeField(null=True)
     address = models.TextField()
@@ -26,8 +38,8 @@ class DietOrder(models.Model):
     state = models.TextField()
     post_code = models.TextField()
     distance = models.FloatField()
-    is_finished = models.BooleanField(default=False)
-
+    is_purchased = models.BooleanField(default=False)
+    confirmed_order = models.ForeignKey(OrderConfirmed, on_delete=models.CASCADE, null=True)
 
     def calculate_whole_price(self):
         self.to_pay = self.diet_cost + self.delivery_cost
@@ -58,11 +70,26 @@ class DietOrder(models.Model):
         else:
             self.delivery_cost_per_day = 0
 
-
-
     def get_absolute_url(self):
         return reverse("cart", kwargs={"pk": self.pk, "user": self.user})
 
     def __str__(self):
-        return f"{self.date_of_start}"
+        return f"STARTS: {self.date_of_start} ENDS: {self.date_of_end}, {self.address}, {self.address_info}"
+
+
+class PurchaserInfo(models.Model):
+    user = models.OneToOneField(User, on_delete=models.PROTECT)
+    surname = models.CharField(max_length=15)
+    name = models.CharField(max_length=20)
+    telephone = models.CharField(max_length=15)
+    address = models.TextField()
+    address_info = models.TextField()
+    locality = models.TextField()
+    state = models.TextField()
+    post_code = models.CharField(max_length=10)
+
+    def __str__(self):
+        return f"{self.surname} {self.name} "
+
+
 
