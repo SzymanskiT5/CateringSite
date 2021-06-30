@@ -1,28 +1,9 @@
+import datetime
+
 from django import forms
-from django.forms import ModelForm, SelectDateWidget
+from django.utils import timezone
 
 from checkout.models import DietOrder, PurchaserInfo, OrderConfirmed
-
-MEGABYTES_CHOICE = (
-    ("1000", 1000),
-    ("1500", 1500),
-    ("2000", 2000),
-    ("2500", 2500),
-    ("3000", 3000),
-    ("3500", 3500),
-)
-
-
-class DietOrderForm(forms.ModelForm, SelectDateWidget):
-    megabytes = forms.ChoiceField(choices=MEGABYTES_CHOICE)
-    days = forms.IntegerField(min_value=1)
-    date_of_start = forms.DateTimeField(widget=forms.SelectDateWidget())
-
-    class Meta:
-        model = DietOrder
-        fields = ["name", "megabytes", "days", "date_of_start", "address", "address_info", "locality", "state",
-                  "post_code"]
-
 
 class PurchaserInfoForm(forms.ModelForm):
     telephone = forms.NumberInput()
@@ -42,3 +23,49 @@ class OrderConfirmedForm(forms.ModelForm):
     class Meta:
         model = OrderConfirmed
         fields = ["payment_method"]
+
+
+class DateInput(forms.DateInput):
+    input_type = 'date'
+
+
+class DietOrderForm(forms.ModelForm):
+    MEGABYTES_CHOICE = (
+        ("1000", 1000),
+        ("1500", 1500),
+        ("2000", 2000),
+        ("2500", 2500),
+        ("3000", 3000),
+        ("3500", 3500),
+    )
+
+    megabytes = forms.ChoiceField(choices=MEGABYTES_CHOICE)
+
+    class Meta:
+        model = DietOrder
+
+        fields = ["name", "megabytes", "date_of_start", "date_of_end", "address", "address_info", "locality", "state",
+                  "post_code"]
+        widgets = {
+            'date_of_start': DateInput(),
+            'date_of_end': DateInput(),
+        }
+
+
+
+    def clean(self):
+        super().clean()
+        date_of_start = self.cleaned_data.get("date_of_start")
+
+        if date_of_start < timezone.now().date():
+            self._errors['date_of_start'] = self.error_class([
+                'Date cannot be from past!'])
+
+        elif date_of_start - timezone.now().date() <= datetime.timedelta(days=3):
+            self._errors['date_of_start'] = self.error_class([
+                'Date must starts in 3 days ahead!'])
+
+
+
+
+        return self.cleaned_data

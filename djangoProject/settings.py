@@ -40,7 +40,6 @@ INSTALLED_APPS = [
     'users.apps.UsersConfig',
     'menu.apps.MenuConfig',
     'checkout.apps.ShoppingcartConfig',
-
     "crispy_forms",
 
 ]
@@ -122,8 +121,8 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
-STATICFILES_DIRS=[
-    os.path.join(BASE_DIR,'static')
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static')
 ]
 MEDIA_URL = "/media/"
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
