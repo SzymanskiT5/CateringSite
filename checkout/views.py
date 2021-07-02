@@ -9,10 +9,10 @@ from django.db.models import Sum
 from django.http import Http404
 from django.shortcuts import render, redirect
 from django.urls import reverse
-from django.views.generic import ListView, UpdateView, DeleteView, FormView, CreateView
+from django.views.generic import ListView, UpdateView, DeleteView, FormView, CreateView, DetailView
 from django.views.generic.base import View
 
-# from checkout.exceptions import TooLongDistance
+from checkout.exceptions import NoOrders
 from checkout.forms import PurchaserInfoForm, OrderConfirmedForm, DietOrderForm
 from checkout.google_api import GoogleApi
 from checkout.models import DietOrder, PurchaserInfo
@@ -25,68 +25,45 @@ class CartView(ListView):
     template_name = "checkout/cart.html"
     context_object_name = "orders"
 
+    def check_dates_up_to_date(self):
+        diets = DietOrder.objects.filter(user=self.request.user).filter(is_purchased=False).order_by("-to_pay")
+        for diet in diets:
+            diet.check_if_order_is_up_to_date()
+        return diets
+
     def get_queryset(self):
-        return DietOrder.objects.filter(user=self.request.user).filter(is_purchased=False).order_by("-to_pay")
+        diets = self.check_dates_up_to_date()
+        return diets
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['total_price'] = DietOrder.objects.filter(user=self.request.user).filter(is_purchased=False).aggregate(
+        context['to_pay'] = DietOrder.objects.filter(user=self.request.user).filter(is_purchased=False).aggregate(
             Sum('to_pay'))
-
         return context
 
-
-class OrderUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
-    model = DietOrder
-
-    def update_order(self):
-        order = self.get_object()
-        name = self.request.POST.get("name")
-        order.days = int(self.request.POST.get("days"))
-        order.megabytes = self.request.POST.get("megabytes")
-        order.address = self.request.POST.get("ship-address")
-        order.address_info = self.request.POST.get("address_info")
-        order.locality = self.request.POST.get("locality")
-        order.state = self.request.POST.get("state")
-        order.post_code = self.request.POST.get("post_code")
-        order.date_of_start = self.create_date_time_from_request()
-        place_id = self.get_place_id(order.address, order.address_info)
-        distance = self.calculate_distance_between_order_and_catering(place_id)
-        diet_object = Diet.objects.filter(name=name).first()
-        order.name = diet_object
-        order.diet_cost_per_day = diet_object.price
-        order.distance = distance
-        order.end_of_the_order()
-        order.calculate_diet_cost()
-
-        return order
-
-    def get(self, request, *args, **kwargs):
-        return render(request, "checkout/diet_order_update.html",
-                      {"title": "Change Order", "api_key": GOOGLE_MAPS_API_KEY, "order": self.get_object()})
-
-    def post(self, request, *args, **kwargs):
-        new_order = self.update_order()
-        return self.handle_order_validation(new_order)
-
-    def test_func(self):
-        order = self.get_object()
-        if not self.request.user == order.user:
-            raise Http404("Page not Found")
-        return True
+    # def post(self, *args, **kwargs):
+    #     if self.request.POST["checkout_button"]:
+    #         diets = self.check_dates_up_to_date()
+    #         diets_out_of_date = DietOrder.objects.filter(user=self.request.user).filter(is_up_to_date=False)
+    #
+    #
+    #         if diets_out_of_date:
+    #             messages.warning(self.request, "Delete or change out of date orders")
+    #             return render(self.request, "checkout/cart.html", {"orders":diets} )
+    #
+    #
+    #         if diets:
+    #             return redirect("checkout")
+    #
+    #         messages.warning(self.request, "You order is empty")
+    #         return render(self.request, "checkout/cart.html", {"orders":diets} )
 
 
-class OrderDeleteView(DeleteView):
-    model = DietOrder
-
-    def get_success_url(self):
-        return reverse('cart')
-
-
-class CheckoutView(View):
+class CheckoutView(UserPassesTestMixin, View):
     template_name = "checkout/checkout.html"
 
     def get(self, *args, **kwargs):
+
         instance = PurchaserInfo.objects.filter(user=self.request.user).first()
         purchaser_info_form = PurchaserInfoForm(instance=instance)
         order_confirmed_form = OrderConfirmedForm()
@@ -123,11 +100,31 @@ class CheckoutView(View):
             order.confirmed_order = order_confirmed_object
             order.save()
 
+    def test_func(self):
+        diets = self.get_diets_and_check_up_to_date()
+        diets_out_of_date = DietOrder.objects.filter(user=self.request.user).filter(is_up_to_date=False)
+
+        if diets_out_of_date:
+            messages.warning(self.request, "Delete or change out of date orders")
+            return False
+        if not diets:
+            messages.warning(self.request, "You don't have any orders to checkout")
+            return False
+        return True
+
+    def get_diets_and_check_up_to_date(self):
+        diets = DietOrder.objects.filter(user=self.request.user).filter(is_purchased=False).order_by("-to_pay")
+        for diet in diets:
+            diet.check_if_order_is_up_to_date()
+        return diets
+
+    def handle_no_permission(self):
+        return redirect('cart')
+
 
 class DietOrderView(CreateView):
     template_name = "checkout/diet_order.html"
     form_class = DietOrderForm
-
 
     def form_valid(self, form):
         order = form.save(commit=False)
@@ -140,9 +137,7 @@ class DietOrderView(CreateView):
 
         messages.warning(self.request, "We don't delivery to this destination, it's more than 10 km")
         return render(self.request, "checkout/diet_order.html",
-                          {'form': self.form_class(self.request.POST), "api_key": GOOGLE_MAPS_API_KEY})
-
-
+                      {'form': self.form_class(self.request.POST), "api_key": GOOGLE_MAPS_API_KEY})
 
     def handle_order_information(self, order):
         order.user = self.request.user
@@ -161,12 +156,62 @@ class DietOrderView(CreateView):
         return render(self.request, "checkout/diet_order.html",
                       {'form': self.form_class(self.request.POST), "api_key": GOOGLE_MAPS_API_KEY})
 
-
-
     def get(self, *args, **kwargs):
         return render(self.request, "checkout/diet_order.html",
                       {'form': self.form_class(), "api_key": GOOGLE_MAPS_API_KEY})
 
-
     def get_success_url(self):
         return reverse("cart")
+
+
+class OrderUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView, DietOrderView):  # SPRAWDZIC LOGIN REQUIRED
+    model = DietOrder
+    form_class = DietOrderForm
+    template_name = "checkout/diet_order.html"
+
+    def get(self, *args, **kwargs):
+        return render(self.request, "checkout/diet_order.html",
+                      {'form': self.form_class(instance=self.get_object()), "api_key": GOOGLE_MAPS_API_KEY})
+
+
+## update nie dziala
+    def form_valid(self, form):
+        order = self.get_object()
+        order_changed = form.save(commit=False)
+        place_id = GoogleApi.get_place_id(order_changed.address, order_changed.address_info)
+        order.distance = GoogleApi.calculate_distance_between_order_and_catering(place_id)
+
+        if order.distance < 10:
+            self.replace_order_information(order, order_changed)
+            messages.success(self.request, "Diet added to your cart!")
+            return super().form_valid(form)
+
+        messages.warning(self.request, "We don't delivery to this destination, it's more than 10 km")
+        return render(self.request, "checkout/diet_order.html",
+                      {'form': self.form_class(self.request.POST), "api_key": GOOGLE_MAPS_API_KEY})
+
+    def replace_order_information(self, order, order_changed):
+        order_changed.user = self.request.user
+        len_of_holidays_days = order_changed.calculate_holidays_days_between_dates()
+        len_of_weekend_days = order_changed.calculate_weekend_days()
+        order_changed.calculate_days_between_dates(len_of_holidays_days, len_of_weekend_days)
+        diet_object = Diet.objects.filter(name=order_changed.name).first()
+        order_changed.diet_cost_per_day = diet_object.price
+        order_changed.calculate_diet_cost()
+        order_changed.calculate_extra_costs_for_delivery_per_day()
+        order_changed.calculate_delivery_cost()
+        order_changed.calculate_whole_price()
+        order.save(order_changed)
+
+    def test_func(self):
+        order = self.get_object()
+        if not self.request.user == order.user:
+            raise Http404("Page not Found")
+        return True
+
+
+class OrderDeleteView(DeleteView):
+    model = DietOrder
+
+    def get_success_url(self):
+        return reverse('cart')

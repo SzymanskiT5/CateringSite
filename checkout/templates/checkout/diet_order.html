@@ -25,9 +25,8 @@
     <form action="" enctype="multipart/form-data" method="POST">
         {% csrf_token %}
         {{ form|crispy }}
-{#        <div id='form-errors'>{{ form_errors }}</div>#}
 
-    <button type="submit"  class="my-button">Add</button>
+        <button type="submit" class="my-button">Add</button>
 
     </form>
 

@@ -38,6 +38,7 @@ class DietOrder(models.Model):
     post_code = models.CharField(max_length=8)
     distance = models.FloatField()
     is_purchased = models.BooleanField(default=False)
+    is_up_to_date = models.BooleanField(default=True)
     confirmed_order = models.ForeignKey(OrderConfirmed, on_delete=models.CASCADE, null=True)
 
     def calculate_whole_price(self):
@@ -81,6 +82,11 @@ class DietOrder(models.Model):
             self.delivery_cost_per_day = 5
         else:
             self.delivery_cost_per_day = 0
+
+
+    def check_if_order_is_up_to_date(self):
+        if self.date_of_start - timezone.now().date() <= datetime.timedelta(days=3):
+            self.is_up_to_date = False
 
     def get_absolute_url(self):
         return reverse("cart", kwargs={"pk": self.pk, "user": self.user})

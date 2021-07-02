@@ -135,7 +135,7 @@ GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_KEY")
 CATERING_PLACE_ID = "ChIJvyO50TgJqkcRXSMnoiT2-n4"
 HOLIDAYS_POLAND = holidays.Poland()
 
-POLISH_POST_CODE_REGEX = "\d{2}-\d{3}"
+POLISH_POST_CODE_REGEX = "^(\d{2}-\d{3})$"
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 

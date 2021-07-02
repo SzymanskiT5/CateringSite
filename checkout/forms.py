@@ -72,18 +72,20 @@ class DietOrderForm(forms.ModelForm):
                 'Date cannot be from past!\n'
                 'Date must starts in 3 days ahead!'])
 
-        if date_of_start in HOLIDAYS_POLAND:
-            print(date_of_start.day)
-            while date_of_start in HOLIDAYS_POLAND or date_of_start.day in range(5, 7):
+
+        if date_of_start in HOLIDAYS_POLAND or date_of_start.weekday() in range(5, 7):
+
+
+            while date_of_start in HOLIDAYS_POLAND or date_of_start.weekday() in range(5, 7):
                 date_of_start = date_of_start + datetime.timedelta(days=1)
-                print(date_of_start)
 
             self._errors['date_of_start'] = self.error_class([
-                f"It's holiday day, the closest termin is {date_of_start} "])
+                f"It's holiday day or weekend, the closest termin is {date_of_start} "])
 
-        if date_of_end in HOLIDAYS_POLAND or date_of_start.day in range(5, 7):
-            while date_of_end in HOLIDAYS_POLAND:
+        if date_of_end in HOLIDAYS_POLAND or date_of_start.weekday() in range(5, 7):
+            while date_of_end in HOLIDAYS_POLAND or date_of_start.weekday() in range(5, 7) :
                 date_of_end = date_of_end + datetime.timedelta(days=1)
+
             self._errors['date_of_end'] = self.error_class([
                 f"It's holiday day, the closest termin is {date_of_end} "])
 
