@@ -4,6 +4,12 @@ from django import forms
 from django.utils import timezone
 
 from checkout.models import DietOrder, PurchaserInfo, OrderConfirmed
+import re
+
+from djangoProject.settings import POLISH_POST_CODE_REGEX, HOLIDAYS_POLAND
+import holidays
+
+
 
 class PurchaserInfoForm(forms.ModelForm):
     telephone = forms.NumberInput()
@@ -55,16 +61,37 @@ class DietOrderForm(forms.ModelForm):
 
     def clean(self):
         super().clean()
+
         date_of_start = self.cleaned_data.get("date_of_start")
+        date_of_end = self.cleaned_data.get("date_of_end")
+        post_code = self.cleaned_data.get("post_code")
 
-        if date_of_start < timezone.now().date():
-            self._errors['date_of_start'] = self.error_class([
-                'Date cannot be from past!'])
 
-        elif date_of_start - timezone.now().date() <= datetime.timedelta(days=3):
+        if date_of_start < timezone.now().date() or date_of_start - timezone.now().date() <= datetime.timedelta(days=3):
             self._errors['date_of_start'] = self.error_class([
+                'Date cannot be from past!\n'
                 'Date must starts in 3 days ahead!'])
 
+        if date_of_start in HOLIDAYS_POLAND:
+            print(date_of_start.day)
+            while date_of_start in HOLIDAYS_POLAND or date_of_start.day in range(5, 7):
+                date_of_start = date_of_start + datetime.timedelta(days=1)
+                print(date_of_start)
+
+            self._errors['date_of_start'] = self.error_class([
+                f"It's holiday day, the closest termin is {date_of_start} "])
+
+        if date_of_end in HOLIDAYS_POLAND or date_of_start.day in range(5, 7):
+            while date_of_end in HOLIDAYS_POLAND:
+                date_of_end = date_of_end + datetime.timedelta(days=1)
+            self._errors['date_of_end'] = self.error_class([
+                f"It's holiday day, the closest termin is {date_of_end} "])
+
+        if date_of_end < date_of_start:
+            self._errors["date_of_end"] = self.error_class(["End of diet cannot be earlier than start"])
+
+        if not re.match(POLISH_POST_CODE_REGEX, post_code):
+            self._errors["post_code"] = self.error_class(["Invalid postcode format"])
 
 
 

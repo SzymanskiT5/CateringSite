@@ -12,8 +12,9 @@ from django.urls import reverse
 from django.views.generic import ListView, UpdateView, DeleteView, FormView, CreateView
 from django.views.generic.base import View
 
-from checkout.exceptions import OrderDateInPast, OrderDateNotMinimumThreeDays, TooLongDistance
+# from checkout.exceptions import TooLongDistance
 from checkout.forms import PurchaserInfoForm, OrderConfirmedForm, DietOrderForm
+from checkout.google_api import GoogleApi
 from checkout.models import DietOrder, PurchaserInfo
 from djangoProject.settings import GOOGLE_MAPS_API_KEY, CATERING_PLACE_ID
 from menu.models import Diet
@@ -33,7 +34,6 @@ class CartView(ListView):
             Sum('to_pay'))
 
         return context
-
 
 
 class OrderUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
@@ -128,74 +128,45 @@ class DietOrderView(CreateView):
     template_name = "checkout/diet_order.html"
     form_class = DietOrderForm
 
-    def get_place_id(self, address, address_info):
-        parameteres = {"input": address + " " + address_info, "key": GOOGLE_MAPS_API_KEY}
-        localization_api_call = requests.get("https://maps.googleapis.com/maps/api/place/autocomplete/json",
-                                             params=parameteres).text
-        json_object = json.loads(localization_api_call)
-        place_id = json_object["predictions"][0]["place_id"]
-        return place_id
-
-    def calculate_distance_between_order_and_catering(self, place_id):
-        parameters = {"origin": f"place_id:{CATERING_PLACE_ID}", "destination": f"place_id:{place_id}",
-                      "key": f"{GOOGLE_MAPS_API_KEY}"}
-        distance_api_call = requests.get("https://maps.googleapis.com/maps/api/directions/json?",
-                                         params=parameters).text
-        json_object = json.loads(distance_api_call)
-        distance = json_object['routes'][0]['legs'][0]['distance']['value']
-        distance = int(distance) / 1000
-        return distance
-
-    def handle_order_validation(self, order):
-        try:
-            order.calculate_extra_costs_for_delivery_per_day()
-            order.calculate_delivery_cost()
-            order.calculate_whole_price()
-
-            # order.check_if_date_is_past()
-            order.check_if_date_is_three_days_ahead()
-            return self.save_order(order)
-
-        except OrderDateInPast:
-            messages.warning(self.request, "Diet cannot be from past!")
-            return render(self.request, "checkout/diet_order.html")
-
-        except OrderDateNotMinimumThreeDays:
-            messages.warning(self.request, "Diet can start 3 days ahead from today!")
-            return render(self.request, "checkout/diet_order.html")
-
-        except TooLongDistance:
-            messages.warning(self.request, "We don't delivery to this destination, it's more than 10 km")
-            return render(self.request, "checkout/diet_order.html")
-
-    def save_order(self, order):
-        order.save()
-        messages.success(self.request, "Diet added to your cart!")
-        return redirect("cart")
 
     def form_valid(self, form):
-
         order = form.save(commit=False)
-        order.user = self.request.user
-        order.calculate_days_between_dates()
+        place_id = GoogleApi.get_place_id(order.address, order.address_info)
+        order.distance = GoogleApi.calculate_distance_between_order_and_catering(place_id)
+        if order.distance < 10:
+            self.handle_order_information(order)
+            messages.success(self.request, "Diet added to your cart!")
+            return super().form_valid(form)
 
+        messages.warning(self.request, "We don't delivery to this destination, it's more than 10 km")
+        return render(self.request, "checkout/diet_order.html",
+                          {'form': self.form_class(self.request.POST), "api_key": GOOGLE_MAPS_API_KEY})
+
+
+
+    def handle_order_information(self, order):
+        order.user = self.request.user
+        len_of_holidays_days = order.calculate_holidays_days_between_dates()
+        len_of_weekend_days = order.calculate_weekend_days()
+        order.calculate_days_between_dates(len_of_holidays_days, len_of_weekend_days)
         diet_object = Diet.objects.filter(name=order.name).first()
         order.diet_cost_per_day = diet_object.price
-
-        place_id = self.get_place_id(order.address, order.address_info)
-        order.distance = self.calculate_distance_between_order_and_catering(place_id)
-
         order.calculate_diet_cost()
-
-        return self.handle_order_validation(order)
-
+        order.calculate_extra_costs_for_delivery_per_day()
+        order.calculate_delivery_cost()
+        order.calculate_whole_price()
+        order.save()
 
     def form_invalid(self, form):
-        return render(self.request, "checkout/diet_order.html", {'form': self.form_class(self.request.POST)})
-
-    def get_context_data(self, **kwargs):
-        context = super(DietOrderView, self).get_context_data(**kwargs)
-        context['api_key'] = GOOGLE_MAPS_API_KEY
-        return context
+        return render(self.request, "checkout/diet_order.html",
+                      {'form': self.form_class(self.request.POST), "api_key": GOOGLE_MAPS_API_KEY})
 
 
+
+    def get(self, *args, **kwargs):
+        return render(self.request, "checkout/diet_order.html",
+                      {'form': self.form_class(), "api_key": GOOGLE_MAPS_API_KEY})
+
+
+    def get_success_url(self):
+        return reverse("cart")

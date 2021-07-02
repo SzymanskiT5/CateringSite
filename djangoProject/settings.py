@@ -13,6 +13,8 @@ import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
+import holidays
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Quick-start development settings - unsuitable for production
@@ -131,7 +133,9 @@ LOGIN_REDIRECT_URL = 'catering-home'
 LOGOUT_REDIRECT_URL = 'catering-home'
 GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_KEY")
 CATERING_PLACE_ID = "ChIJvyO50TgJqkcRXSMnoiT2-n4"
+HOLIDAYS_POLAND = holidays.Poland()
 
+POLISH_POST_CODE_REGEX = "\d{2}-\d{3}"
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 

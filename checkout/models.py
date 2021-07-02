@@ -4,8 +4,9 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
+
+from djangoProject.settings import HOLIDAYS_POLAND
 from menu.models import Diet
-from checkout.exceptions import OrderDateInPast, OrderDateNotMinimumThreeDays, TooLongDistance
 
 
 class OrderConfirmed(models.Model):
@@ -48,23 +49,35 @@ class DietOrder(models.Model):
     def calculate_delivery_cost(self):
         self.delivery_cost = self.delivery_cost_per_day * self.days
 
-    # def end_of_the_order(self):
-    #     end = self.date_of_start + datetime.timedelta(days=self.days)
-    #     self.date_of_end = end
+    def calculate_holidays_days_between_dates(self):
+        dates_list = [self.date_of_start + datetime.timedelta(days=x) for x in
+                      range(0, (self.date_of_end - self.date_of_start).days)]
 
-    # def check_if_date_is_past(self):
-    #     if self.date_of_start < timezone.now().date():
-    #         raise OrderDateInPast
+        days_to_avoid = 0
+        for day in dates_list:
+            if day in HOLIDAYS_POLAND:
+                days_to_avoid += 1
 
-    # def check_if_date_is_three_days_ahead(self):
-    #     if self.date_of_start - timezone.now().date() <= datetime.timedelta(days=3):
-    #         raise OrderDateNotMinimumThreeDays
+        return days_to_avoid
+
+    def calculate_weekend_days(self):
+        dates_list = [self.date_of_start + datetime.timedelta(days=x) for x in
+                      range(0, (self.date_of_end - self.date_of_start).days)]
+        days_to_avoid = 0
+        for date in dates_list:
+            if date.weekday() in range(5, 7) and date.weekday() not in HOLIDAYS_POLAND:
+                days_to_avoid += 1
+
+        return days_to_avoid
+
+    def calculate_days_between_dates(self, holidays_days, weekend_days):
+        """ days + 1 because, catering includes last day, not only difference between days"""
+        days = (self.date_of_end - self.date_of_start).days - holidays_days - weekend_days
+        self.days = days + 1
 
 
     def calculate_extra_costs_for_delivery_per_day(self):
-        if self.distance > 10:
-            raise TooLongDistance
-        elif 10 > self.distance > 5:
+        if 10 > self.distance > 5:
             self.delivery_cost_per_day = 5
         else:
             self.delivery_cost_per_day = 0
@@ -74,8 +87,6 @@ class DietOrder(models.Model):
 
     def __str__(self):
         return f"STARTS: {self.date_of_start} ENDS: {self.date_of_end}, {self.address}, {self.address_info}"
-
-
 
 
 class PurchaserInfo(models.Model):
