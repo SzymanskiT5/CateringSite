@@ -9,11 +9,20 @@ from djangoProject.settings import HOLIDAYS_POLAND
 from menu.models import Diet
 
 
-class OrderConfirmed(models.Model):
+class OrderCheckout(models.Model):
     user = models.ForeignKey(User, on_delete=models.PROTECT)
     date_of_purchase = models.DateTimeField(default=timezone.now)
     payment_method = models.TextField()
     to_pay = models.FloatField(null=True)
+    surname = models.CharField(max_length=15)
+    name = models.CharField(max_length=20)
+    telephone = models.CharField(max_length=15)
+    address = models.CharField(max_length=100)
+    address_info = models.CharField(max_length=50)
+    locality = models.CharField(max_length=25)
+    state = models.CharField(max_length=25)
+    post_code = models.CharField(max_length=6)
+    note = models.TextField()
 
     def __str__(self):
         return f"{self.user} {self.date_of_purchase}, {self.payment_method}"
@@ -39,7 +48,11 @@ class DietOrder(models.Model):
     distance = models.FloatField()
     is_purchased = models.BooleanField(default=False)
     is_up_to_date = models.BooleanField(default=True)
-    confirmed_order = models.ForeignKey(OrderConfirmed, on_delete=models.CASCADE, null=True)
+    confirmed_order = models.ForeignKey(OrderCheckout, on_delete=models.CASCADE, null=True)
+
+
+
+
 
     def calculate_whole_price(self):
         self.to_pay = self.diet_cost + self.delivery_cost

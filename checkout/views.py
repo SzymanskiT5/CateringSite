@@ -1,8 +1,3 @@
-import json
-from datetime import datetime
-
-import pytz
-import requests
 from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from django.db.models import Sum
@@ -12,12 +7,12 @@ from django.urls import reverse
 from django.views.generic import ListView, UpdateView, DeleteView, FormView, CreateView, DetailView
 from django.views.generic.base import View
 
-from checkout.exceptions import NoOrders
-from checkout.forms import PurchaserInfoForm, OrderConfirmedForm, DietOrderForm
+from checkout.forms import OrderCheckout, DietOrderForm, OrderCheckoutForm
 from checkout.google_api import GoogleApi
 from checkout.models import DietOrder, PurchaserInfo
 from djangoProject.settings import GOOGLE_MAPS_API_KEY, CATERING_PLACE_ID
 from menu.models import Diet
+from django.core.mail import send_mail
 
 
 class CartView(ListView):
@@ -41,64 +36,52 @@ class CartView(ListView):
             Sum('to_pay'))
         return context
 
-    # def post(self, *args, **kwargs):
-    #     if self.request.POST["checkout_button"]:
-    #         diets = self.check_dates_up_to_date()
-    #         diets_out_of_date = DietOrder.objects.filter(user=self.request.user).filter(is_up_to_date=False)
-    #
-    #
-    #         if diets_out_of_date:
-    #             messages.warning(self.request, "Delete or change out of date orders")
-    #             return render(self.request, "checkout/cart.html", {"orders":diets} )
-    #
-    #
-    #         if diets:
-    #             return redirect("checkout")
-    #
-    #         messages.warning(self.request, "You order is empty")
-    #         return render(self.request, "checkout/cart.html", {"orders":diets} )
 
-
-class CheckoutView(UserPassesTestMixin, View):
+class CheckoutView(UserPassesTestMixin, CreateView):
+    model = OrderCheckout
     template_name = "checkout/checkout.html"
+    form_class = OrderCheckoutForm
+
 
     def get(self, *args, **kwargs):
-
-        instance = PurchaserInfo.objects.filter(user=self.request.user).first()
-        purchaser_info_form = PurchaserInfoForm(instance=instance)
-        order_confirmed_form = OrderConfirmedForm()
-
+        instance = OrderCheckout.objects.filter(user=self.request.user).first()
+        form = self.form_class(instance=instance)
         return render(self.request, "checkout/checkout.html", {"title": "DjangoCatering-Checkout",
-                                                               "order_confirmed_form": order_confirmed_form,
-                                                               "purchaser_info_form": purchaser_info_form})
+                                                               "form": form})
 
-    def post(self, *args, **kwargs):
-        instance = PurchaserInfo.objects.filter(user=self.request.user).first()
-        purchaser_info_form = PurchaserInfoForm(self.request.POST, instance=instance)
-        order_confirmed_form = OrderConfirmedForm(self.request.POST)
-        purchaser_info_form.instance.user = self.request.user
-        order_confirmed_form.instance.user = self.request.user
+    def form_valid(self, form):
+        checkout_order = form.save(commit=False)
+        checkout_order.user = self.request.user
+        self.set_order_checkout_to_pay(checkout_order)
+        self.set_diet_order_confirmed_order(checkout_order)
+        self.set_diet_order_is_purchased_to_true()
+        checkout_order.save()
+        messages.warning(self.request, "Diet is ordered!")
+        return super().form_valid(form)
 
-        if purchaser_info_form.is_valid() and order_confirmed_form.is_valid():
-            purchaser_info_form.save()
-            order_confirmed_object = order_confirmed_form.save()
-            self.set_order_confirmed_to_pay(order_confirmed_object)
-            self.set_diet_order_fields(order_confirmed_object)
+    def form_invalid(self, form):
+        return render(self.request, "checkout/diet_order.html",
+                      {'form': self.form_class(self.request.POST)})
 
-        return redirect('cart')
+    def get_success_url(self):
+        return reverse('cart')
 
-    def set_order_confirmed_to_pay(self, order_confirmed_object):
+
+    def set_diet_order_confirmed_order(self, checkout_order):
+        DietOrder.objects \
+            .filter(user=self.request.user). \
+            filter(is_purchased=False).filter(is_up_to_date=True).update(confirmed_order = checkout_order)
+
+
+
+    def set_order_checkout_to_pay(self, order_confirmed_object):
         order_confirmed_object.to_pay = DietOrder.objects \
             .filter(user=self.request.user). \
             filter(is_purchased=False).aggregate(Sum('to_pay')).get('to_pay__sum')
         order_confirmed_object.save()
 
-    def set_diet_order_fields(self, order_confirmed_object):
-        orders = list((DietOrder.objects.filter(user=self.request.user).filter(is_purchased=False).all()))
-        for order in orders:
-            order.is_purchased = True
-            order.confirmed_order = order_confirmed_object
-            order.save()
+    def set_diet_order_is_purchased_to_true(self):
+        DietOrder.objects.filter(user=self.request.user).filter(is_purchased=False).update(is_purchased=True)
 
     def test_func(self):
         diets = self.get_diets_and_check_up_to_date()
@@ -107,19 +90,28 @@ class CheckoutView(UserPassesTestMixin, View):
         if diets_out_of_date:
             messages.warning(self.request, "Delete or change out of date orders")
             return False
+
         if not diets:
             messages.warning(self.request, "You don't have any orders to checkout")
             return False
+
         return True
 
     def get_diets_and_check_up_to_date(self):
-        diets = DietOrder.objects.filter(user=self.request.user).filter(is_purchased=False).order_by("-to_pay")
+        diets = DietOrder.objects.filter(user=self.request.user).filter(is_purchased=False)
         for diet in diets:
             diet.check_if_order_is_up_to_date()
         return diets
 
     def handle_no_permission(self):
         return redirect('cart')
+
+
+
+
+
+
+
 
 
 class DietOrderView(CreateView):
@@ -173,35 +165,21 @@ class OrderUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView, DietO
         return render(self.request, "checkout/diet_order.html",
                       {'form': self.form_class(instance=self.get_object()), "api_key": GOOGLE_MAPS_API_KEY})
 
-
-## update nie dziala
     def form_valid(self, form):
-        order = self.get_object()
-        order_changed = form.save(commit=False)
-        place_id = GoogleApi.get_place_id(order_changed.address, order_changed.address_info)
+        order_old = self.get_object()
+        order = form.save(commit=False)
+        place_id = GoogleApi.get_place_id(order.address, order.address_info)
         order.distance = GoogleApi.calculate_distance_between_order_and_catering(place_id)
 
         if order.distance < 10:
-            self.replace_order_information(order, order_changed)
-            messages.success(self.request, "Diet added to your cart!")
+            self.handle_order_information(order)
+            order_old.delete()
             return super().form_valid(form)
 
         messages.warning(self.request, "We don't delivery to this destination, it's more than 10 km")
         return render(self.request, "checkout/diet_order.html",
                       {'form': self.form_class(self.request.POST), "api_key": GOOGLE_MAPS_API_KEY})
 
-    def replace_order_information(self, order, order_changed):
-        order_changed.user = self.request.user
-        len_of_holidays_days = order_changed.calculate_holidays_days_between_dates()
-        len_of_weekend_days = order_changed.calculate_weekend_days()
-        order_changed.calculate_days_between_dates(len_of_holidays_days, len_of_weekend_days)
-        diet_object = Diet.objects.filter(name=order_changed.name).first()
-        order_changed.diet_cost_per_day = diet_object.price
-        order_changed.calculate_diet_cost()
-        order_changed.calculate_extra_costs_for_delivery_per_day()
-        order_changed.calculate_delivery_cost()
-        order_changed.calculate_whole_price()
-        order.save(order_changed)
 
     def test_func(self):
         order = self.get_object()

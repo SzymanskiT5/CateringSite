@@ -16,20 +16,17 @@
                 <h2>DELIVERY</h2>
                 <p class="price"> Main address: {{ order.address }} </p>
                 <p class="price"> House number: {{ order.address_info }} </p>
-                <p class="price"> {{ order.post_code}} {{ order.locality}} </p>
+                <p class="price"> {{ order.post_code }} {{ order.locality }} </p>
 
                 {% if not order.is_up_to_date %}
-                <p class="text-danger">THIS ORDER IS NOT UP TO DATE, PLEASE CHANGE IT OR DELETE</p>
+                    <p class="text-danger">THIS ORDER IS NOT UP TO DATE, PLEASE CHANGE IT OR DELETE</p>
                 {% endif %}
 
 
-
-
-
-
             </div>
-            <a class="btn btn-secondary btn-sm mt-1 mb-1" href="{% url "order_update" order.user order.id  %}  ">Change </a>
-            <a class="btn btn-danger btn-sm mt-1 mb-1" href="{% url "order_delete" order.user order.id  %}">Delete </a>
+            <a class="btn btn-secondary btn-sm mt-1 mb-1"
+               href="{% url "order_update" order.user order.id %}  ">Change </a>
+            <a class="btn btn-danger btn-sm mt-1 mb-1" href="{% url "order_delete" order.user order.id %}">Delete </a>
         </article>
     {% endfor %}
 
@@ -41,12 +38,8 @@
     {% endif %}
 
 
-   <a class="btn btn-secondary btn-sm mt-1 mb-1" href="{% url "add_product"  %}  ">Add Diet </a>
+    <a class="btn btn-secondary btn-sm mt-1 mb-1" href="{% url "add_product" %}  ">Add Diet </a>
 
-{#<form action="" method="post" name="dupa" value="dupa">#}
-{#{% csrf_token %}#}
-{#<input class="btn btn-outline-dark btn-sm mt-1 mb-1" type="submit" name = "checkout_button" value="Checkout">#}
- <a class="btn btn-outline-dark btn-sm mt-1 mb-1" href="{% url "checkout"  %}"> To Checkout </a>
-{#</form>#}
+    <a class="btn btn-outline-dark btn-sm mt-1 mb-1" href="{% url "checkout" %}"> To Checkout </a>
 
 {% endblock %}

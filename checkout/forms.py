@@ -3,32 +3,31 @@ import datetime
 from django import forms
 from django.utils import timezone
 
-from checkout.models import DietOrder, PurchaserInfo, OrderConfirmed
+from checkout.models import DietOrder, PurchaserInfo,  OrderCheckout
 import re
 
 from djangoProject.settings import POLISH_POST_CODE_REGEX, HOLIDAYS_POLAND
 import holidays
 
 
-
-class PurchaserInfoForm(forms.ModelForm):
-    telephone = forms.NumberInput()
-
-    class Meta:
-        model = PurchaserInfo
-        fields = ["surname", "name", "telephone", "address", "address_info", "locality", "state", "post_code"]
-
-
-class OrderConfirmedForm(forms.ModelForm):
+class OrderCheckoutForm(forms.ModelForm):
     PAYMENT_CHOICE = (
         ("Przelewy24", "Przelewy24"),
         ("Transfer", "Transfer"),
     )
     payment_method = forms.ChoiceField(choices=PAYMENT_CHOICE)
+    telephone = forms.NumberInput()
 
     class Meta:
-        model = OrderConfirmed
-        fields = ["payment_method"]
+        model = OrderCheckout
+        fields = ["surname", "name", "telephone", "address", "address_info", "locality", "state", "post_code", "payment_method", "note"]
+
+
+    def clean(self):
+        super().clean()
+        post_code = self.cleaned_data.get("post_code")
+        if not re.match(POLISH_POST_CODE_REGEX, post_code):
+            self._errors["post_code"] = self.error_class(["Invalid postcode format"])
 
 
 class DateInput(forms.DateInput):
@@ -57,8 +56,6 @@ class DietOrderForm(forms.ModelForm):
             'date_of_end': DateInput(),
         }
 
-
-
     def clean(self):
         super().clean()
 
@@ -66,15 +63,12 @@ class DietOrderForm(forms.ModelForm):
         date_of_end = self.cleaned_data.get("date_of_end")
         post_code = self.cleaned_data.get("post_code")
 
-
         if date_of_start < timezone.now().date() or date_of_start - timezone.now().date() <= datetime.timedelta(days=3):
             self._errors['date_of_start'] = self.error_class([
                 'Date cannot be from past!\n'
                 'Date must starts in 3 days ahead!'])
 
-
         if date_of_start in HOLIDAYS_POLAND or date_of_start.weekday() in range(5, 7):
-
 
             while date_of_start in HOLIDAYS_POLAND or date_of_start.weekday() in range(5, 7):
                 date_of_start = date_of_start + datetime.timedelta(days=1)
@@ -83,7 +77,7 @@ class DietOrderForm(forms.ModelForm):
                 f"It's holiday day or weekend, the closest termin is {date_of_start} "])
 
         if date_of_end in HOLIDAYS_POLAND or date_of_start.weekday() in range(5, 7):
-            while date_of_end in HOLIDAYS_POLAND or date_of_start.weekday() in range(5, 7) :
+            while date_of_end in HOLIDAYS_POLAND or date_of_start.weekday() in range(5, 7):
                 date_of_end = date_of_end + datetime.timedelta(days=1)
 
             self._errors['date_of_end'] = self.error_class([
@@ -94,7 +88,5 @@ class DietOrderForm(forms.ModelForm):
 
         if not re.match(POLISH_POST_CODE_REGEX, post_code):
             self._errors["post_code"] = self.error_class(["Invalid postcode format"])
-
-
 
         return self.cleaned_data
