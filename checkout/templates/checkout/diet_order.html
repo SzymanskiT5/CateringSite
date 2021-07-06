@@ -18,6 +18,136 @@
             async
     ></script>
 
+
+
+{# {% csrf_token %}#}
+{##}
+{#     <script type="text/javascript">#}
+{##}
+{#        function getCookie(name) {#}
+{#            var cookieValue = null;#}
+{#            if (document.cookie && document.cookie !== '') {#}
+{#                var cookies = document.cookie.split(';');#}
+{#                for (var i = 0; i < cookies.length; i++) {#}
+{#                    var cookie = cookies[i].trim();#}
+{#                    // Does this cookie string begin with the name we want?#}
+{#                    if (cookie.substring(0, name.length + 1) === (name + '=')) {#}
+{#                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));#}
+{#                        break;#}
+{#                    }#}
+{#                }#}
+{#            }#}
+{#            return cookieValue;#}
+{#        }#}
+{##}
+{#        function uuidv4() {#}
+{#            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {#}
+{#                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);#}
+{#                return v.toString(16);#}
+{#            });#}
+{#        }#}
+{##}
+{#        let device = getCookie('device')#}
+{##}
+{#        if (device == null || device == undefined) {#}
+{#            device = uuidv4()#}
+{#        }#}
+{##}
+{#        document.cookie = 'device=' + device + ";domain=;path=/"#}
+{##}
+{#        function send_cookie_request() {#}
+{#            let cookie = getCookie("device")#}
+{#            console.log(cookie)#}
+            {#var string = JSON.stringify(obj);#}
+{#            fetch(`${window.origin}/cart/add_product/?`, {#}
+{#                csrfmiddlewaretoken: '{{ csrf_token }}',#}
+{#                method: "POST",#}
+{#                credentials: "include",#}
+{#                body: JSON.stringify(cookie),#}
+{#                cache: "no-cache",#}
+{#                headers: new Headers({#}
+{#                    "content-type": "application/json"#}
+{##}
+{#                })#}
+{##}
+{#            })#}
+{#        }#}
+{##}
+{##}
+        {#send_cookie_request()#}
+{#    </script>#}
+
+
+{##}
+{#<script>#}
+{#  // using jQuery#}
+{#  function getCookie(name) {#}
+{#    var cookieValue = null;#}
+{#    if (document.cookie && document.cookie != '') {#}
+{#      var cookies = document.cookie.split(';');#}
+{#      for (var i = 0; i < cookies.length; i++) {#}
+{#        var cookie = jQuery.trim(cookies[i]);#}
+{#        // Does this cookie string begin with the name we want?#}
+{#        if (cookie.substring(0, name.length + 1) == (name + '=')) {#}
+{#          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));#}
+{#          break;#}
+{#        }#}
+{#      }#}
+{#    }#}
+{#    console.log(cookieValue)#}
+{#    return cookieValue;#}
+{#  }#}
+{##}
+{#  function csrfSafeMethod(method) {#}
+{#    // these HTTP methods do not require CSRF protection#}
+{#    return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));#}
+{#  }#}
+{##}
+{#  $(document).ready(function() {#}
+{#    var csrftoken = getCookie('csrftoken');#}
+{#    $.ajaxSetup({#}
+{#      beforeSend: function(xhr, settings) {#}
+{#        if (!csrfSafeMethod(settings.type) && !this.crossDomain) {#}
+{#          xhr.setRequestHeader("X-CSRFToken", csrftoken);#}
+{#        }#}
+{#      }#}
+{#    });#}
+{#  });#}
+{#</script>#}
+{#<script type="text/javascript">#}
+{##}
+{#        function getCookie(name) {#}
+{#            var cookieValue = null;#}
+{#            if (document.cookie && document.cookie !== '') {#}
+{#                var cookies = document.cookie.split(';');#}
+{#                for (var i = 0; i < cookies.length; i++) {#}
+{#                    var cookie = cookies[i].trim();#}
+{#                    // Does this cookie string begin with the name we want?#}
+{#                    if (cookie.substring(0, name.length + 1) === (name + '=')) {#}
+{#                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));#}
+{#                        break;#}
+{#                    }#}
+{#                }#}
+{#            }#}
+{#            return cookieValue;#}
+{#        }#}
+{##}
+{#        function uuidv4() {#}
+{#          return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {#}
+{#            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);#}
+{#            return v.toString(16);#}
+{#          });#}
+{#        }#}
+{##}
+{#        let device = getCookie('device')#}
+{##}
+{#        if (device == null || device == undefined){#}
+{#            device = uuidv4()#}
+{#        }#}
+{##}
+{#        document.cookie ='device=' + device + ";domain=;path=/"#}
+{##}
+{#    </script>#}
 {% endblock %}
 
 {% block content %}
@@ -26,7 +156,7 @@
         {% csrf_token %}
         {{ form|crispy }}
 
-        <button type="submit" class="my-button">Add</button>
+        <button type="submit" onclick="getCookie()" class="my-button">Add</button>
 
     </form>
 

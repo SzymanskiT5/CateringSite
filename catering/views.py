@@ -1,10 +1,12 @@
-from django.shortcuts import render
-
-def home(request):
-
-    return render(request, "catering/home.html", {"title":"DjangoCatering"})
+from django.http import HttpResponse
+from django.shortcuts import render, redirect
 
 
+def home(request) -> HttpResponse:
+        return render(request, "catering/home.html", {"title":"DjangoCatering"})
 
-def about(request):
+
+
+
+def about(request)-> HttpResponse:
     return render(request, "catering/about.html", {"title": "About"})

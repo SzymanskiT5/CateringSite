@@ -1,10 +1,12 @@
 from django.contrib import messages
 from django.shortcuts import render, redirect
+from django.urls import reverse
 from django.views.generic.base import View
-
 from users.forms import UserRegisterForm
-
 from django.contrib.auth.views import LogoutView
+
+# from users.models import Customer
+
 
 class RegisterView(View):
 
@@ -18,13 +20,10 @@ class RegisterView(View):
         return render(request, "users/register.html", {"form": form})
 
     def get(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            return redirect("/")
         form = UserRegisterForm
         return render(request, "users/register.html", {"form": form})
-
-
-
-
-
 
 
 class MyLogoutView(LogoutView):

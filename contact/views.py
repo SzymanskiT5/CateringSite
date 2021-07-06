@@ -1,22 +1,32 @@
 from django.contrib import messages
 from django.shortcuts import render, redirect
-from django.views.generic import View
+from django.urls import reverse
+from django.views.generic import View, FormView
 
 from .forms import ContactForm
+from .models import Contact
 
 
-class ContactView(View):
+class ContactView(FormView):
+    form_class = ContactForm
+    model = Contact
+
+
 
     def get(self, request, *args, **kwargs):
         return render(request, "contact/contact.html", {"title": "DjangoCatering-Contact"})
 
-    def post(self, request, *args, **kwargs):
-        form = ContactForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, f"Thank you. We will response as soon as possible!")
-            return redirect("catering-contact")
+    def form_valid(self, form):
+        form.save()
+        messages.success(self.request, f"Thank you. We will response as soon as possible!")
+        return super().form_valid(form)
 
-        messages.warning(request, "Fill correctly all fields!")
-        return render(request, "contact/contact.html", {"title": "DjangoCatering-Contact"})
+
+    def form_invalid(self, form):
+        return render(self.request, "contact/contact.html",
+                      {'form': self.form_class(self.request.POST), "title": "DjangoCatering-Contact"})
+
+    def get_success_url(self):
+        return reverse("contact")
+
 

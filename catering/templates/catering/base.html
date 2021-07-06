@@ -9,7 +9,6 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.slim.min.js"></script>
 
-
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"></script>
@@ -17,7 +16,10 @@
     <link href="https://fonts.googleapis.com/css?family=Playfair+Display:400,700,900" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700" rel="stylesheet">
-    <link rel="stylesheet" href="{% static "/css/footer.css" %}">
+
+
+
+
 
 
     {% block head %}{% endblock %}
@@ -28,7 +30,7 @@
         <nav class="navbar navbar-expand-lg navbar-dark bg-dark static-top">
             <div class="container">
                 <a class="navbar-brand" href={% url "catering-home" %}>
-                    <img src={% static "/images/python_logo.jpg" %} alt="PythonLogo" width="80" height="80">
+                    <img src={% static "catering/images/python_logo.jpg" %} alt="PythonLogo" width="80" height="80">
                 </a>
                 <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive"
                         aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">

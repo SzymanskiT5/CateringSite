@@ -6,16 +6,14 @@
     <form method="POST">
         {% csrf_token %}
 
-
         {{ form|crispy }}
-
 
         <div class="form-group">
             <button class="btn-outline-info" type="submit">Purchase</button>
 
         </div>
         <div>
-    <img class="img-thumbnail" src="{% static  "/checkout/images/transfer.png" %}">
+            <img class="img-thumbnail" src="{% static  "/checkout/images/transfer.png" %}">
         </div>
     </form>
 {% endblock %}

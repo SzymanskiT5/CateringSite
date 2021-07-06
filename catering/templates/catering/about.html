@@ -1,13 +1,27 @@
 {% extends "catering/base.html" %}
 {% block content %}
-<section class="py-5">
-  <div class="container">
-    <h1 class="font-weight-light">About our Catering</h1>
-    <p class="lead">"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore
-        et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea
-        commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
-        pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est
-        laborum"</p>
-  </div>
-    {% endblock %}
+    <section class="py-5">
+    <div class="container">
+        <h1 class="font-weight-light">About our Catering</h1>
+        <p class="lead">Catering for geeks people! My catering site was simulated to take orders in city of Szczecin.
+            I connected orders with Google Maps API to handle distance between my kitchen and customers houses</p>
+    </div>
+    <div class="container">
+        <h1 class="font-weight-light">How it works?</h1>
+        <p class="lead">You as a customer, you can order some diets, to indicated destination. My program is able to
+            calculate
+            distance between my localization and order localization. If is more than 5 km, you need to pay extra value
+            for delivery. If it is more than 10 km, unfortunately we don't deliver :)
+            We don't delivery in holidays and weekend, program handles it too.Your diet can start minimum 3 days from
+            todays date. If you added properly some diets, you need to fill your data information and choose payment
+            method.
+            My program handles normal transfer and simulated API Przelewy24 payment gate. That was really much fun and a
+            lot of
+            changes was made here! I hope you enjoy! </p>
+        <p class="lead"> Greetings </p>
+        <p class="lead">Sebastian Szymański </p>
+    </div>
+
+    </div>
+{% endblock %}
 </section>

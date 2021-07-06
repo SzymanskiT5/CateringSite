@@ -14,7 +14,7 @@ class Diet(models.Model):
     image = models.ImageField(upload_to='diet_images')
     description = models.TextField()
     price = models.FloatField(default=0)
-    slug = models.SlugField(null=True)
+    slug = models.SlugField()
 
     def __str__(self):
         return self.name

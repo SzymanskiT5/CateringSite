@@ -3,7 +3,7 @@ import datetime
 from django import forms
 from django.utils import timezone
 
-from checkout.models import DietOrder, PurchaserInfo,  OrderCheckout
+from checkout.models import DietOrder, PurchaserInfo, OrderCheckout
 import re
 
 from djangoProject.settings import POLISH_POST_CODE_REGEX, HOLIDAYS_POLAND
@@ -20,14 +20,18 @@ class OrderCheckoutForm(forms.ModelForm):
 
     class Meta:
         model = OrderCheckout
-        fields = ["surname", "name", "telephone", "address", "address_info", "locality", "state", "post_code", "payment_method", "note"]
+
+        fields = ["email", "surname", "name", "telephone", "address", "address_info", "locality", "state", "post_code",
+                  "payment_method", "note"]
 
 
-    def clean(self):
+    def clean(self) -> dict:
         super().clean()
         post_code = self.cleaned_data.get("post_code")
         if not re.match(POLISH_POST_CODE_REGEX, post_code):
             self._errors["post_code"] = self.error_class(["Invalid postcode format"])
+
+        return self.cleaned_data
 
 
 class DateInput(forms.DateInput):
@@ -56,7 +60,7 @@ class DietOrderForm(forms.ModelForm):
             'date_of_end': DateInput(),
         }
 
-    def clean(self):
+    def clean(self) -> dict:
         super().clean()
 
         date_of_start = self.cleaned_data.get("date_of_start")
