@@ -10,7 +10,7 @@ from django.views.generic.base import View
 import users
 from checkout.forms import OrderCheckout, DietOrderForm, OrderCheckoutForm
 from checkout.google_api import GoogleApi
-from checkout.models import DietOrder, PurchaserInfo
+from checkout.models import DietOrder
 from djangoProject.settings import GOOGLE_MAPS_API_KEY, CATERING_PLACE_ID
 from menu.models import Diet
 from django.core.mail import send_mail
@@ -66,9 +66,11 @@ class CheckoutView(UserPassesTestMixin, CreateView):
     template_name = "checkout/checkout.html"
     form_class = OrderCheckoutForm
 
-    def check_if_user_authenticated_and_handle_email_field(self, form):
-        if self.request.user.is_authenticated:
-            del form.fields["email"]
+    # def check_if_user_authenticated_and_handle_email_field(self, form):
+    #     if self.request.user.is_authenticated:
+    #         form.instance.email = self.request.user.customer
+    #         del form.fields["email"]
+
 
     def get(self, *args, **kwargs):
         try:
@@ -76,10 +78,11 @@ class CheckoutView(UserPassesTestMixin, CreateView):
 
         except:
             device = self.request.COOKIES.get("device")
-            instance = Customer.objects.get(device=device)
+            customer = Customer.objects.get(device=device)
+            instance = OrderCheckout.objects.filter(customer=customer).first()
 
         form = self.form_class(instance=instance)
-        self.check_if_user_authenticated_and_handle_email_field(form)
+        # self.check_if_user_authenticated_and_handle_email_field(form)
 
         return render(self.request, "checkout/checkout.html", {"title": "DjangoCatering-Checkout",
                                                                "form": form})
@@ -95,7 +98,6 @@ class CheckoutView(UserPassesTestMixin, CreateView):
             customer_object.save()
             checkout_order.customer = customer_object
 
-
         self.set_order_checkout_to_pay(checkout_order)
         self.set_diet_order_confirmed_order(checkout_order)
         self.set_diet_order_is_purchased_to_true()
@@ -104,7 +106,8 @@ class CheckoutView(UserPassesTestMixin, CreateView):
         return super().form_valid(form)
 
     def form_invalid(self, form):
-        return render(self.request, "checkout/diet_order.html",
+        # self.check_if_user_authenticated_and_handle_email_field(form)
+        return render(self.request, "checkout/checkout.html",
                       {'form': self.form_class(self.request.POST)})
 
     def get_success_url(self):
@@ -136,7 +139,6 @@ class CheckoutView(UserPassesTestMixin, CreateView):
                 .filter(customer=customer). \
                 filter(is_purchased=False).aggregate(Sum('to_pay')).get('to_pay__sum')
             order_confirmed_object.save()
-
 
     def set_diet_order_is_purchased_to_true(self):
         try:
@@ -287,7 +289,6 @@ class OrderDeleteView(DeleteView):
 
     def test_func(self):
         order = self.get_object()
-
         try:
             self.request.user.customer == order.customer
 
@@ -301,3 +302,21 @@ class OrderDeleteView(DeleteView):
                 raise Http404("Page not found")
 
         return True
+
+
+
+
+
+
+class MyOrdersHistory(ListView):
+    model = OrderCheckout
+    template_name = "checkout/orders_history.html"
+    context_object_name = "checkouts"
+
+
+
+    def get_queryset(self):
+        return OrderCheckout.objects.filter(customer=self.request.user.customer).order_by("date_of_purchase")
+
+
+

@@ -1,7 +1,7 @@
 from django.contrib import admin
-from checkout.models import DietOrder, PurchaserInfo, OrderCheckout
+from checkout.models import DietOrder, OrderCheckout
 
 admin.site.register(DietOrder)
-admin.site.register(PurchaserInfo)
+
 admin.site.register(OrderCheckout)
 

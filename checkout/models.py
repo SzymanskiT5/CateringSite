@@ -110,17 +110,17 @@ class DietOrder(models.Model):
     def __str__(self) -> str:
         return f"STARTS: {self.date_of_start} ENDS: {self.date_of_end}, {self.address}, {self.address_info}"
 
-
-class PurchaserInfo(models.Model):
-    customer = models.OneToOneField(Customer, on_delete=models.PROTECT)
-    surname = models.CharField(max_length=15)
-    name = models.CharField(max_length=20)
-    telephone = models.CharField(max_length=15)
-    address = models.TextField()
-    address_info = models.TextField()
-    locality = models.TextField()
-    state = models.TextField()
-    post_code = models.CharField(max_length=10)
-
-    def __str__(self) -> str:
-        return f"{self.surname} {self.name} "
+#
+# class PurchaserInfo(models.Model):
+#     customer = models.OneToOneField(Customer, on_delete=models.PROTECT)
+#     surname = models.CharField(max_length=15)
+#     name = models.CharField(max_length=20)
+#     telephone = models.CharField(max_length=15)
+#     address = models.TextField()
+#     address_info = models.TextField()
+#     locality = models.TextField()
+#     state = models.TextField()
+#     post_code = models.CharField(max_length=10)
+#
+#     def __str__(self) -> str:
+#         return f"{self.surname} {self.name} "
