@@ -2,12 +2,12 @@
 {% block content %}
     {% for diet in diets %}
         <article class="media content-section">
-          <img class="img-thumbnail" src="{{ diet.image.url }}">
-          <div class="media-body">
+            <img class="img-thumbnail" src="{{ diet.image.url }}">
+            <div class="media-body">
 
-            <h2><a class="article-title" href="{% url "offer_detail" diet.slug %}">{{ diet.name }}</a></h2>
-            <p class="article-content">{{ diet.description }}</p>
-          </div>
+                <h2><a class="article-title" href="{% url "offer_detail" diet.slug %}">{{ diet.name }}</a></h2>
+                <p class="article-content">{{ diet.description }}</p>
+            </div>
         </article>
     {% endfor %}
 {% endblock %}

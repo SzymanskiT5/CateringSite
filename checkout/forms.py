@@ -7,13 +7,25 @@ from djangoProject.settings import POLISH_POST_CODE_REGEX, HOLIDAYS_POLAND
 
 
 
-class OrderCheckoutForm(forms.ModelForm):
+class NotLoggedUserOrderCheckoutForm(forms.ModelForm):
     PAYMENT_CHOICE = (
         ("Przelewy24", "Przelewy24"),
         ("Transfer", "Transfer"),
     )
     payment_method = forms.ChoiceField(choices=PAYMENT_CHOICE)
     telephone = forms.NumberInput()
+    email = forms.EmailField()
+
+
+
+
+
+    def clean(self) -> dict:
+        super().clean()
+        post_code = self.cleaned_data.get("post_code")
+        if not re.match(POLISH_POST_CODE_REGEX, post_code):
+            self._errors["post_code"] = self.error_class(["Invalid postcode format"])
+        return self.cleaned_data
 
     class Meta:
         model = OrderCheckout
@@ -22,15 +34,33 @@ class OrderCheckoutForm(forms.ModelForm):
                   "payment_method", "note"]
 
 
+
+
+
+class LoggedUserOrderCheckoutForm(forms.ModelForm):
+    PAYMENT_CHOICE = (
+        ("Przelewy24", "Przelewy24"),
+        ("Transfer", "Transfer"),
+    )
+    payment_method = forms.ChoiceField(choices=PAYMENT_CHOICE)
+    telephone = forms.NumberInput()
+
+
+
     def clean(self) -> dict:
         super().clean()
         post_code = self.cleaned_data.get("post_code")
         if not re.match(POLISH_POST_CODE_REGEX, post_code):
             self._errors["post_code"] = self.error_class(["Invalid postcode format"])
-
-
-
         return self.cleaned_data
+
+    class Meta:
+        model = OrderCheckout
+
+        fields = [ "surname", "name", "telephone", "address", "address_info", "locality", "state", "post_code",
+                  "payment_method", "note"]
+
+
 
 
 class DateInput(forms.DateInput):
@@ -48,16 +78,6 @@ class DietOrderForm(forms.ModelForm):
     )
 
     megabytes = forms.ChoiceField(choices=MEGABYTES_CHOICE)
-
-    class Meta:
-        model = DietOrder
-
-        fields = ["name", "megabytes", "date_of_start", "date_of_end", "address", "address_info", "locality", "state",
-                  "post_code"]
-        widgets = {
-            'date_of_start': DateInput(),
-            'date_of_end': DateInput(),
-        }
 
     def clean(self) -> dict:
         super().clean()
@@ -98,3 +118,13 @@ class DietOrderForm(forms.ModelForm):
             self._errors["post_code"] = self.error_class(["Invalid postcode format"])
 
         return self.cleaned_data
+
+    class Meta:
+        model = DietOrder
+
+        fields = ["name", "megabytes", "date_of_start", "date_of_end", "address", "address_info", "locality", "state",
+                  "post_code"]
+        widgets = {
+            'date_of_start': DateInput(),
+            'date_of_end': DateInput(),
+        }

@@ -12,7 +12,7 @@ class Customer(models.Model):
 
 
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.user:
             name = self.user.username
         else:

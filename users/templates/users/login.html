@@ -7,7 +7,7 @@
             {% csrf_token %}
             <fieldset class="form-group">
                 <legend class="border-botom mb-4">Log In</legend>
-                {{ form|crispy}}
+                {{ form|crispy }}
 
             </fieldset>
             <div class="form-group">
@@ -17,6 +17,10 @@
         </form>
         <div class="border-top pt-3">
             <small class="text-muted"> Not registered?<a class="ml-2" href="{% url "register" %}">Sign In</a>
+            </small>
+        </div>
+        <div class="border-top pt-3">
+            <small class="text-muted"> Forgotten password?<a class="ml-2" href="{% url "password_reset" %} ">Reset </a>
             </small>
         </div>
     </div>

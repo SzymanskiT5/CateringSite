@@ -8,5 +8,5 @@ class Contact(models.Model):
     message = models.TextField()
     date_posted = models.DateTimeField(default=timezone.now)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.subject

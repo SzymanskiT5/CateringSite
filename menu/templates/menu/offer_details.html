@@ -1,6 +1,4 @@
 {% extends  "catering/base.html" %}
-
-
 {% block content %}
 
     <article class="media content-section">
@@ -13,15 +11,15 @@
     </article>
 
 
-        <h2>Example Menu</h2>
-        {% for meals in diet.dietexample_set.all %}
+    <h2>Example Menu</h2>
+    {% for meals in diet.dietexample_set.all %}
 
-            {% include 'menu/example_diet_table.html' %}
+        {% include 'menu/example_diet_table.html' %}
 
-        {% endfor %}
+    {% endfor %}
 
-   <form action={% url "add_product" %}>
-    <input type="submit" value="Make an Order!" />
-</form>
+    <form action={% url "add_product" %}>
+        <input type="submit" value="Make an Order!"/>
+    </form>
 
 {% endblock %}

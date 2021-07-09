@@ -16,7 +16,7 @@ class Diet(models.Model):
     price = models.FloatField(default=0)
     slug = models.SlugField()
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
     def save(self, *args, **kwargs):
@@ -40,7 +40,7 @@ class DietExample(models.Model):
     fifth_dish = models.TextField()
     diet = models.ForeignKey(Diet, on_delete=models.PROTECT)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.diet} Example"
 
 

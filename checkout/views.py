@@ -1,21 +1,35 @@
-import json
+from typing import Union, Type, List
+
 from django.contrib import messages
-from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
+from django.contrib.auth.mixins import UserPassesTestMixin
 from django.db.models import Sum
-from django.http import Http404
+from django.http import Http404, HttpResponse, HttpResponseRedirect, HttpResponsePermanentRedirect
 from django.shortcuts import render, redirect
 from django.urls import reverse
-from django.views.generic import ListView, UpdateView, DeleteView, FormView, CreateView, DetailView
-from django.views.generic.base import View
-import users
-from checkout.forms import OrderCheckout, DietOrderForm, OrderCheckoutForm
+from django.views.generic import ListView, UpdateView, DeleteView, CreateView, DetailView
+from django.views.generic.edit import ModelFormMixin
+
+from checkout.forms import OrderCheckout, DietOrderForm, LoggedUserOrderCheckoutForm, \
+    NotLoggedUserOrderCheckoutForm
 from checkout.google_api import GoogleApi
 from checkout.models import DietOrder
-from djangoProject.settings import GOOGLE_MAPS_API_KEY, CATERING_PLACE_ID
+from djangoProject.settings import GOOGLE_MAPS_API_KEY
 from menu.models import Diet
 from django.core.mail import send_mail
 
 from users.models import Customer
+
+
+def get_cookies_and_customer_or_create_customer(request) -> Customer:
+    device = request.COOKIES.get("device")
+    customer = Customer.objects.get_or_create(device=device)[0]
+    return customer
+
+
+def get_cookies_and_customer(request) -> Customer:
+    device = request.COOKIES.get("device")
+    customer = Customer.objects.get(device=device)
+    return customer
 
 
 class CartView(ListView):
@@ -23,15 +37,13 @@ class CartView(ListView):
     template_name = "checkout/cart.html"
     context_object_name = "orders"
 
-    def check_dates_up_to_date(self):
+    def check_dates_up_to_date(self) -> None:
         try:
             diets = DietOrder.objects.filter(customer=self.request.user.customer).filter(is_purchased=False).order_by(
                 "-to_pay")
 
         except:
-            device = self.request.COOKIES.get("device")
-            customer = Customer.objects.get_or_create(device=device)
-            customer = customer[0]
+            customer = get_cookies_and_customer_or_create_customer(self.request)
             diets = DietOrder.objects.filter(customer=customer).filter(is_purchased=False).order_by(
                 "-to_pay")
 
@@ -39,11 +51,11 @@ class CartView(ListView):
             diet.check_if_order_is_up_to_date()
         return diets
 
-    def get_queryset(self):
+    def get_queryset(self) -> None:
         diets = self.check_dates_up_to_date()
         return diets
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs) -> None:
         context = super().get_context_data(**kwargs)
         try:
             context['to_pay'] = DietOrder.objects.filter(customer=self.request.user.customer).filter(
@@ -51,9 +63,8 @@ class CartView(ListView):
                 Sum('to_pay'))
 
         except:
-            device = self.request.COOKIES.get("device")
-            customer = Customer.objects.get_or_create(device=device)
-            customer = customer[0]
+
+            customer = get_cookies_and_customer_or_create_customer(self.request)
             context['to_pay'] = DietOrder.objects.filter(customer=customer).filter(
                 is_purchased=False).aggregate(
                 Sum('to_pay'))
@@ -64,36 +75,33 @@ class CartView(ListView):
 class CheckoutView(UserPassesTestMixin, CreateView):
     model = OrderCheckout
     template_name = "checkout/checkout.html"
-    form_class = OrderCheckoutForm
 
-    # def check_if_user_authenticated_and_handle_email_field(self, form):
-    #     if self.request.user.is_authenticated:
-    #         form.instance.email = self.request.user.customer
-    #         del form.fields["email"]
+    def get_form_class(self):
 
+        if self.request.user.is_authenticated:
+            return LoggedUserOrderCheckoutForm
 
-    def get(self, *args, **kwargs):
-        try:
+        return NotLoggedUserOrderCheckoutForm
+
+    def get(self, *args, **kwargs) -> HttpResponse:
+        if self.request.user.is_authenticated:
             instance = OrderCheckout.objects.filter(customer=self.request.user.customer).first()
 
-        except:
-            device = self.request.COOKIES.get("device")
-            customer = Customer.objects.get(device=device)
+        else:
+            customer = get_cookies_and_customer(self.request)
             instance = OrderCheckout.objects.filter(customer=customer).first()
 
-        form = self.form_class(instance=instance)
-        # self.check_if_user_authenticated_and_handle_email_field(form)
-
+        form = self.get_form_class()
+        form = form(instance=instance)
         return render(self.request, "checkout/checkout.html", {"title": "DjangoCatering-Checkout",
                                                                "form": form})
 
-    def form_valid(self, form):
+    def form_valid(self, form) -> HttpResponse:
         checkout_order = form.save(commit=False)
         try:
             checkout_order.customer = self.request.user.customer
         except:
-            device = self.request.COOKIES.get("device")
-            customer_object = Customer.objects.get(device=device)
+            customer_object = get_cookies_and_customer(self.request)
             customer_object.email = form.instance.email
             customer_object.save()
             checkout_order.customer = customer_object
@@ -105,61 +113,55 @@ class CheckoutView(UserPassesTestMixin, CreateView):
         messages.success(self.request, "Diet is ordered!")
         return super().form_valid(form)
 
-    def form_invalid(self, form):
-        # self.check_if_user_authenticated_and_handle_email_field(form)
+    def form_invalid(self, form) -> HttpResponse:
         return render(self.request, "checkout/checkout.html",
-                      {'form': self.form_class(self.request.POST)})
+                      {'form': form})
 
-    def get_success_url(self):
+    def get_success_url(self) -> str:
         return reverse('cart')
 
-    def set_diet_order_confirmed_order(self, checkout_order):
+    def set_diet_order_confirmed_order(self, checkout_order) -> None:
         try:
             DietOrder.objects \
                 .filter(customer=self.request.user.customer). \
                 filter(is_purchased=False).filter(is_up_to_date=True).update(confirmed_order=checkout_order)
         except:
-            device = self.request.COOKIES.get("device")
-            customer = Customer.objects.get(device=device)
-
+            customer = get_cookies_and_customer(self.request)
             DietOrder.objects \
                 .filter(customer=customer) \
                 .filter(is_purchased=False).filter(is_up_to_date=True).update(confirmed_order=checkout_order)
 
-    def set_order_checkout_to_pay(self, order_confirmed_object):
+    def set_order_checkout_to_pay(self, order_confirmed_object) -> None:
         try:
             order_confirmed_object.to_pay = DietOrder.objects \
                 .filter(customer=self.request.user.customer). \
                 filter(is_purchased=False).aggregate(Sum('to_pay')).get('to_pay__sum')
             order_confirmed_object.save()
         except:
-            device = self.request.COOKIES.get("device")
-            customer = Customer.objects.get(device=device)
+            customer = get_cookies_and_customer(self.request)
             order_confirmed_object.to_pay = DietOrder.objects \
                 .filter(customer=customer). \
                 filter(is_purchased=False).aggregate(Sum('to_pay')).get('to_pay__sum')
             order_confirmed_object.save()
 
-    def set_diet_order_is_purchased_to_true(self):
+    def set_diet_order_is_purchased_to_true(self) -> None:
         try:
             DietOrder.objects.filter(customer=self.request.user.customer).filter(is_purchased=False).update(
                 is_purchased=True)
 
         except:
-            device = self.request.COOKIES.get("device")
-            customer = Customer.objects.get(device=device)
+            customer = get_cookies_and_customer(self.request)
             DietOrder.objects.filter(customer=customer).filter(is_purchased=False).update(
                 is_purchased=True)
 
-    def test_func(self):
+    def test_func(self) -> bool:
         diets = self.get_diets_and_check_up_to_date()
 
         try:
             diets_out_of_date = DietOrder.objects.filter(customer=self.request.user.customer).filter(
                 is_up_to_date=False)
         except:
-            device = self.request.COOKIES.get("device")
-            customer = Customer.objects.get(device=device)
+            customer = get_cookies_and_customer(self.request)
             diets_out_of_date = DietOrder.objects.filter(customer=customer).filter(
                 is_up_to_date=False)
 
@@ -173,19 +175,18 @@ class CheckoutView(UserPassesTestMixin, CreateView):
 
         return True
 
-    def get_diets_and_check_up_to_date(self):
+    def get_diets_and_check_up_to_date(self) -> None:
         try:
             diets = DietOrder.objects.filter(customer=self.request.user.customer).filter(is_purchased=False)
         except:
-            device = self.request.COOKIES.get("device")
-            customer = Customer.objects.get(device=device)
+            customer = get_cookies_and_customer(self.request)
             diets = DietOrder.objects.filter(customer=customer).filter(is_purchased=False)
 
         for diet in diets:
             diet.check_if_order_is_up_to_date()
         return diets
 
-    def handle_no_permission(self):
+    def handle_no_permission(self) -> Union[HttpResponseRedirect, HttpResponsePermanentRedirect]:
         return redirect('cart')
 
 
@@ -193,7 +194,7 @@ class DietOrderView(CreateView):
     template_name = "checkout/diet_order.html"
     form_class = DietOrderForm
 
-    def form_valid(self, form):
+    def form_valid(self, form) -> HttpResponse:
         order = form.save(commit=False)
         place_id = GoogleApi.get_place_id(order.address, order.address_info)
         order.distance = GoogleApi.calculate_distance_between_order_and_catering(place_id)
@@ -206,15 +207,13 @@ class DietOrderView(CreateView):
         return render(self.request, "checkout/diet_order.html",
                       {'form': self.form_class(self.request.POST), "api_key": GOOGLE_MAPS_API_KEY})
 
-    def set_user_or_device_customer(self, order):
+    def set_user_or_device_customer(self, order) -> None:
         try:
             order.customer = self.request.user.customer
         except:
-            device = self.request.COOKIES.get("device")
-            customer = Customer.objects.get_or_create(device=device)
-            order.customer = customer[0]
+            order.customer = get_cookies_and_customer_or_create_customer(self.request)
 
-    def handle_order_information(self, order):
+    def handle_order_information(self, order) -> None:
         self.set_user_or_device_customer(order)
         len_of_holidays_days = order.calculate_holidays_days_between_dates()
         len_of_weekend_days = order.calculate_weekend_days()
@@ -227,15 +226,15 @@ class DietOrderView(CreateView):
         order.calculate_whole_price()
         order.save()
 
-    def form_invalid(self, form):
+    def form_invalid(self, form) -> HttpResponse:
         return render(self.request, "checkout/diet_order.html",
                       {'form': self.form_class(self.request.POST), "api_key": GOOGLE_MAPS_API_KEY})
 
-    def get(self, *args, **kwargs):
+    def get(self, *args, **kwargs) -> HttpResponse:
         return render(self.request, "checkout/diet_order.html",
                       {'form': self.form_class(), "api_key": GOOGLE_MAPS_API_KEY})
 
-    def get_success_url(self):
+    def get_success_url(self) -> HttpResponse:
         return reverse("cart")
 
 
@@ -244,11 +243,11 @@ class OrderUpdateView(UserPassesTestMixin, UpdateView, DietOrderView):
     form_class = DietOrderForm
     template_name = "checkout/diet_order.html"
 
-    def get(self, *args, **kwargs):
+    def get(self, *args, **kwargs) -> HttpResponse:
         return render(self.request, "checkout/diet_order.html",
                       {'form': self.form_class(instance=self.get_object()), "api_key": GOOGLE_MAPS_API_KEY})
 
-    def form_valid(self, form):
+    def form_valid(self, form) -> HttpResponse:
         order_old = self.get_object()
         order = form.save(commit=False)
         place_id = GoogleApi.get_place_id(order.address, order.address_info)
@@ -263,7 +262,7 @@ class OrderUpdateView(UserPassesTestMixin, UpdateView, DietOrderView):
         return render(self.request, "checkout/diet_order.html",
                       {'form': self.form_class(self.request.POST), "api_key": GOOGLE_MAPS_API_KEY})
 
-    def test_func(self):
+    def test_func(self) -> bool:
         order = self.get_object()
 
         try:
@@ -284,10 +283,10 @@ class OrderUpdateView(UserPassesTestMixin, UpdateView, DietOrderView):
 class OrderDeleteView(DeleteView):
     model = DietOrder
 
-    def get_success_url(self):
+    def get_success_url(self) -> HttpResponse:
         return reverse('cart')
 
-    def test_func(self):
+    def test_func(self) -> bool:
         order = self.get_object()
         try:
             self.request.user.customer == order.customer
@@ -304,19 +303,27 @@ class OrderDeleteView(DeleteView):
         return True
 
 
-
-
-
-
 class MyOrdersHistory(ListView):
     model = OrderCheckout
     template_name = "checkout/orders_history.html"
     context_object_name = "checkouts"
 
+    def get_queryset(self) -> OrderCheckout:
+        try:
+            return OrderCheckout.objects.filter(customer=self.request.user.customer).order_by("date_of_purchase")
+        except:
+            raise Http404("Page not found")
 
 
-    def get_queryset(self):
-        return OrderCheckout.objects.filter(customer=self.request.user.customer).order_by("date_of_purchase")
+class MyOrdersHistoryDetail(DetailView):
+    model = OrderCheckout
+    template_name = "checkout/detailed_orders_history.html"
+    context_object_name = "checkout"
 
-
-
+    def test_func(self) -> Union[bool, Exception]:
+        checkout = self.get_object()
+        try:
+            if self.request.user.customer == checkout.customer:
+                return True
+        except:
+            raise Http404("Page not found")
