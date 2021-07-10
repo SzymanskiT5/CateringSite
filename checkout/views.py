@@ -1,4 +1,4 @@
-from typing import Union, Type, List
+from typing import Union
 
 from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin
@@ -7,7 +7,6 @@ from django.http import Http404, HttpResponse, HttpResponseRedirect, HttpRespons
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views.generic import ListView, UpdateView, DeleteView, CreateView, DetailView
-from django.views.generic.edit import ModelFormMixin
 
 from checkout.forms import OrderCheckout, DietOrderForm, LoggedUserOrderCheckoutForm, \
     NotLoggedUserOrderCheckoutForm
@@ -32,20 +31,29 @@ def get_cookies_and_customer(request) -> Customer:
     return customer
 
 
+def check_if_user_logged_or_get_or_create_customer(request) -> Customer:
+    if request.user.is_authenticated:
+        return request.user.customer
+    else:
+        return get_cookies_and_customer_or_create_customer(request)
+
+
+def check_if_user_logged_or_get_customer(request) -> Customer:
+    if request.user.is_authenticated:
+        return request.user.customer
+    else:
+        return get_cookies_and_customer(request)
+
+
 class CartView(ListView):
     model = DietOrder
     template_name = "checkout/cart.html"
     context_object_name = "orders"
 
     def check_dates_up_to_date(self) -> None:
-        try:
-            diets = DietOrder.objects.filter(customer=self.request.user.customer).filter(is_purchased=False).order_by(
-                "-to_pay")
-
-        except:
-            customer = get_cookies_and_customer_or_create_customer(self.request)
-            diets = DietOrder.objects.filter(customer=customer).filter(is_purchased=False).order_by(
-                "-to_pay")
+        customer = check_if_user_logged_or_get_or_create_customer(self.request)
+        diets = DietOrder.objects.filter(customer=customer).filter(is_purchased=False).order_by(
+            "-to_pay")
 
         for diet in diets:
             diet.check_if_order_is_up_to_date()
@@ -57,17 +65,12 @@ class CartView(ListView):
 
     def get_context_data(self, **kwargs) -> None:
         context = super().get_context_data(**kwargs)
-        try:
-            context['to_pay'] = DietOrder.objects.filter(customer=self.request.user.customer).filter(
-                is_purchased=False).aggregate(
-                Sum('to_pay'))
 
-        except:
+        customer = check_if_user_logged_or_get_or_create_customer(self.request)
 
-            customer = get_cookies_and_customer_or_create_customer(self.request)
-            context['to_pay'] = DietOrder.objects.filter(customer=customer).filter(
-                is_purchased=False).aggregate(
-                Sum('to_pay'))
+        context['to_pay'] = DietOrder.objects.filter(customer=customer).filter(
+            is_purchased=False).aggregate(
+            Sum('to_pay'))
 
         return context
 
@@ -84,13 +87,9 @@ class CheckoutView(UserPassesTestMixin, CreateView):
         return NotLoggedUserOrderCheckoutForm
 
     def get(self, *args, **kwargs) -> HttpResponse:
-        if self.request.user.is_authenticated:
-            instance = OrderCheckout.objects.filter(customer=self.request.user.customer).first()
 
-        else:
-            customer = get_cookies_and_customer(self.request)
-            instance = OrderCheckout.objects.filter(customer=customer).first()
 
+        instance = check_if_user_logged_or_get_or_create_customer(self.request)
         form = self.get_form_class()
         form = form(instance=instance)
         return render(self.request, "checkout/checkout.html", {"title": "DjangoCatering-Checkout",
@@ -98,13 +97,12 @@ class CheckoutView(UserPassesTestMixin, CreateView):
 
     def form_valid(self, form) -> HttpResponse:
         checkout_order = form.save(commit=False)
-        try:
-            checkout_order.customer = self.request.user.customer
-        except:
-            customer_object = get_cookies_and_customer(self.request)
-            customer_object.email = form.instance.email
-            customer_object.save()
-            checkout_order.customer = customer_object
+        customer = check_if_user_logged_or_get_or_create_customer(self.request)
+        checkout_order.customer = customer
+
+        if not self.request.user.is_authenticated:
+            customer.email = form.instance.email
+            customer.save()
 
         self.set_order_checkout_to_pay(checkout_order)
         self.set_diet_order_confirmed_order(checkout_order)
@@ -121,49 +119,32 @@ class CheckoutView(UserPassesTestMixin, CreateView):
         return reverse('cart')
 
     def set_diet_order_confirmed_order(self, checkout_order) -> None:
-        try:
-            DietOrder.objects \
-                .filter(customer=self.request.user.customer). \
-                filter(is_purchased=False).filter(is_up_to_date=True).update(confirmed_order=checkout_order)
-        except:
-            customer = get_cookies_and_customer(self.request)
-            DietOrder.objects \
-                .filter(customer=customer) \
-                .filter(is_purchased=False).filter(is_up_to_date=True).update(confirmed_order=checkout_order)
+        customer = check_if_user_logged_or_get_or_create_customer(self.request)
+        DietOrder.objects \
+            .filter(customer=customer). \
+            filter(is_purchased=False).filter(is_up_to_date=True).update(confirmed_order=checkout_order)
 
     def set_order_checkout_to_pay(self, order_confirmed_object) -> None:
-        try:
-            order_confirmed_object.to_pay = DietOrder.objects \
-                .filter(customer=self.request.user.customer). \
-                filter(is_purchased=False).aggregate(Sum('to_pay')).get('to_pay__sum')
-            order_confirmed_object.save()
-        except:
-            customer = get_cookies_and_customer(self.request)
-            order_confirmed_object.to_pay = DietOrder.objects \
-                .filter(customer=customer). \
-                filter(is_purchased=False).aggregate(Sum('to_pay')).get('to_pay__sum')
-            order_confirmed_object.save()
+        customer = check_if_user_logged_or_get_or_create_customer(self.request)
+
+        order_confirmed_object.to_pay = DietOrder.objects \
+            .filter(customer=customer). \
+            filter(is_purchased=False).aggregate(Sum('to_pay')).get('to_pay__sum')
+
+        order_confirmed_object.save()
 
     def set_diet_order_is_purchased_to_true(self) -> None:
-        try:
-            DietOrder.objects.filter(customer=self.request.user.customer).filter(is_purchased=False).update(
-                is_purchased=True)
+        customer = check_if_user_logged_or_get_or_create_customer(self.request)
 
-        except:
-            customer = get_cookies_and_customer(self.request)
-            DietOrder.objects.filter(customer=customer).filter(is_purchased=False).update(
+        DietOrder.objects.filter(customer=customer).filter(is_purchased=False).update(
                 is_purchased=True)
 
     def test_func(self) -> bool:
         diets = self.get_diets_and_check_up_to_date()
+        customer = check_if_user_logged_or_get_or_create_customer(self.request)
+        diets_out_of_date = DietOrder.objects.filter(customer=customer).filter(
+                is_up_to_date=False)
 
-        try:
-            diets_out_of_date = DietOrder.objects.filter(customer=self.request.user.customer).filter(
-                is_up_to_date=False)
-        except:
-            customer = get_cookies_and_customer(self.request)
-            diets_out_of_date = DietOrder.objects.filter(customer=customer).filter(
-                is_up_to_date=False)
 
         if diets_out_of_date:
             messages.warning(self.request, "Delete or change out of date orders")
@@ -176,17 +157,14 @@ class CheckoutView(UserPassesTestMixin, CreateView):
         return True
 
     def get_diets_and_check_up_to_date(self) -> None:
-        try:
-            diets = DietOrder.objects.filter(customer=self.request.user.customer).filter(is_purchased=False)
-        except:
-            customer = get_cookies_and_customer(self.request)
-            diets = DietOrder.objects.filter(customer=customer).filter(is_purchased=False)
+        customer = check_if_user_logged_or_get_or_create_customer(self.request)
+        diets = DietOrder.objects.filter(customer=customer).filter(is_purchased=False)
 
         for diet in diets:
             diet.check_if_order_is_up_to_date()
         return diets
 
-    def handle_no_permission(self) -> Union[HttpResponseRedirect, HttpResponsePermanentRedirect]:
+    def handle_no_permission(self) -> HttpResponse:
         return redirect('cart')
 
 
@@ -208,10 +186,8 @@ class DietOrderView(CreateView):
                       {'form': self.form_class(self.request.POST), "api_key": GOOGLE_MAPS_API_KEY})
 
     def set_user_or_device_customer(self, order) -> None:
-        try:
-            order.customer = self.request.user.customer
-        except:
-            order.customer = get_cookies_and_customer_or_create_customer(self.request)
+        customer = check_if_user_logged_or_get_or_create_customer(self.request)
+        order.customer = customer
 
     def handle_order_information(self, order) -> None:
         self.set_user_or_device_customer(order)
@@ -264,20 +240,11 @@ class OrderUpdateView(UserPassesTestMixin, UpdateView, DietOrderView):
 
     def test_func(self) -> bool:
         order = self.get_object()
-
-        try:
-            self.request.user.customer == order.customer
-
-        except AttributeError:
-            device = self.request.COOKIES.get("device")
-
-            try:
-                Customer.objects.get(device=device)
-
-            except:
-                raise Http404("Page not found")
-
+        customer = check_if_user_logged_or_get_customer(self.request)
+        if not order.customer == customer:
+            raise Http404("Page not found")
         return True
+
 
 
 class OrderDeleteView(DeleteView):
@@ -288,18 +255,9 @@ class OrderDeleteView(DeleteView):
 
     def test_func(self) -> bool:
         order = self.get_object()
-        try:
-            self.request.user.customer == order.customer
-
-        except AttributeError:
-            device = self.request.COOKIES.get("device")
-
-            try:
-                Customer.objects.get(device=device)
-
-            except:
-                raise Http404("Page not found")
-
+        customer = check_if_user_logged_or_get_customer(self.request)
+        if not order.customer == customer:
+            raise Http404("Page not found")
         return True
 
 
@@ -308,11 +266,13 @@ class MyOrdersHistory(ListView):
     template_name = "checkout/orders_history.html"
     context_object_name = "checkouts"
 
-    def get_queryset(self) -> OrderCheckout:
-        try:
-            return OrderCheckout.objects.filter(customer=self.request.user.customer).order_by("date_of_purchase")
-        except:
+    def get_queryset(self) -> Union[OrderCheckout, Exception]:
+        if not self.request.user.is_authenticated:
             raise Http404("Page not found")
+
+        return OrderCheckout.objects.filter(customer=self.request.user.customer).order_by("date_of_purchase")
+
+
 
 
 class MyOrdersHistoryDetail(DetailView):
@@ -322,8 +282,12 @@ class MyOrdersHistoryDetail(DetailView):
 
     def test_func(self) -> Union[bool, Exception]:
         checkout = self.get_object()
-        try:
+        if self.request.user.is_authenticated:
             if self.request.user.customer == checkout.customer:
                 return True
-        except:
-            raise Http404("Page not found")
+
+        raise Http404("Page not found")
+
+
+
+
