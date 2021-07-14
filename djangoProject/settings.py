@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'menu.apps.MenuConfig',
     'checkout.apps.ShoppingcartConfig',
     "crispy_forms",
+    "rest_framework"
 
 ]
 
@@ -134,6 +135,7 @@ LOGOUT_REDIRECT_URL = 'catering-home'
 GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_KEY")
 CATERING_PLACE_ID = "ChIJvyO50TgJqkcRXSMnoiT2-n4"
 HOLIDAYS_POLAND = holidays.Poland()
+ACCOUNT_NUMBER = "092893023209302"
 
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"

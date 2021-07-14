@@ -2,9 +2,8 @@
 {% block content %}
 
     {% for checkout in checkouts %}
-
         <article class="media content-section">
-            <img src="{{ order.name.image.url }}" alt="">
+            <img class="rounded-circle" src="{{ order.name.image.url }}" width="300px" height="300px">
             <div class="media-body">
                 <h2><a class="article-title" href="{% url "orders_history_detail" checkout.customer checkout.pk %}">Your
                     order from {{ checkout.date_of_purchase|date:"F d, Y" }}</a></h2>

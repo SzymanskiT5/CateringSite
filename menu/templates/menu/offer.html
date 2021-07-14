@@ -2,7 +2,7 @@
 {% block content %}
     {% for diet in diets %}
         <article class="media content-section">
-            <img class="img-thumbnail" src="{{ diet.image.url }}">
+            <img class="rounded-circle" src="{{ diet.image.url }} " width="300px" height="300px">
             <div class="media-body">
 
                 <h2><a class="article-title" href="{% url "offer_detail" diet.slug %}">{{ diet.name }}</a></h2>

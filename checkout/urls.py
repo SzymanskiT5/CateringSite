@@ -4,7 +4,7 @@ from .views import CartView, DietOrderView, OrderUpdateView, OrderDeleteView, Ch
 
 urlpatterns = [
     path("", CartView.as_view(), name="cart"),
-    path('add_product/', DietOrderView.as_view(), name="add_product"),
+    path('add-product/', DietOrderView.as_view(), name="add_product"),
     path("orders_history/", MyOrdersHistory.as_view(), name="orders_history"),
     path("orders_history/<str:user>/<int:pk>", MyOrdersHistoryDetail.as_view(), name="orders_history_detail"),
     path('update/<str:user>/<int:pk>/', OrderUpdateView.as_view(), name="order_update"),

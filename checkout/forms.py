@@ -1,5 +1,6 @@
 import datetime
 from django import forms
+from django.contrib.auth.models import User
 from django.utils import timezone
 from checkout.models import DietOrder,  OrderCheckout
 import re
@@ -23,9 +24,16 @@ class NotLoggedUserOrderCheckoutForm(forms.ModelForm):
     def clean(self) -> dict:
         super().clean()
         post_code = self.cleaned_data.get("post_code")
+        email = self.cleaned_data.get("email")
         if not re.match(POLISH_POST_CODE_REGEX, post_code):
             self._errors["post_code"] = self.error_class(["Invalid postcode format"])
+
+        # user = User.objects.filter(email=email)
+        # if user:
+        #     self._errors["email"] = self.error_class(["There is logged user with this email, please log in"])
+
         return self.cleaned_data
+
 
     class Meta:
         model = OrderCheckout
