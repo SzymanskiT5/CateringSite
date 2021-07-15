@@ -74,6 +74,7 @@ class CartView(ListView):
         context['to_pay'] = DietOrder.objects.filter(customer=customer).filter(
             is_purchased=False).aggregate(
             Sum('to_pay'))
+        context["title"] = "Cart"
 
         return context
 
@@ -94,7 +95,7 @@ class CheckoutView(UserPassesTestMixin, CreateView):
         instance = OrderCheckout.objects.filter(customer=customer).first()
         form = self.get_form_class()
         form = form(instance=instance)
-        return render(self.request, "checkout/checkout.html", {"title": "DjangoCatering-Checkout",
+        return render(self.request, "checkout/checkout.html", {"title": "Checkout",
                                                                "form": form})
 
     def form_valid(self, form) -> HttpResponse:
@@ -111,8 +112,7 @@ class CheckoutView(UserPassesTestMixin, CreateView):
 
         return self.check_payment_method(checkout_order)
 
-
-    def check_payment_method(self,checkout_order):
+    def check_payment_method(self, checkout_order):
         if checkout_order.payment_method == "Przelewy24":
             return self.checkout_przelewy24(checkout_order)
 
@@ -131,8 +131,7 @@ class CheckoutView(UserPassesTestMixin, CreateView):
         checkout_order.save()
         messages.success(self.request, "Diet is ordered!")
         return render(self.request, "checkout/api_view.html",
-                      {"request": json_przelewy24.data, "response": {response}})
-
+                      {"request": json_przelewy24.data, "response": {response}, "title":"API simulation"})
 
     def checkout_transfer(self, checkout_order):
         self.set_diet_order_is_purchased_to_true()
@@ -163,8 +162,6 @@ class CheckoutView(UserPassesTestMixin, CreateView):
     def form_invalid(self, form) -> HttpResponse:
         return render(self.request, "checkout/checkout.html",
                       {'form': form})
-
-
 
     def set_diet_order_confirmed_order(self, checkout_order) -> None:
         customer = get_customer_or_create(self.request)
@@ -255,7 +252,7 @@ class DietOrderView(CreateView):
 
     def get(self, *args, **kwargs) -> HttpResponse:
         return render(self.request, "checkout/diet_order.html",
-                      {'form': self.form_class(), "api_key": GOOGLE_MAPS_API_KEY})
+                      {'form': self.form_class(), "api_key": GOOGLE_MAPS_API_KEY, "title": "Diet Order"})
 
     def get_success_url(self) -> HttpResponse:
         return reverse("cart")
@@ -267,8 +264,10 @@ class OrderUpdateView(UserPassesTestMixin, UpdateView, DietOrderView):
     template_name = "checkout/diet_order.html"
 
     def get(self, *args, **kwargs) -> HttpResponse:
+        order = self.get_object()
         return render(self.request, "checkout/diet_order.html",
-                      {'form': self.form_class(instance=self.get_object()), "api_key": GOOGLE_MAPS_API_KEY})
+                      {'form': self.form_class(instance=self.get_object()), "api_key": GOOGLE_MAPS_API_KEY,
+                       "title": f"Change {order.name}"})
 
     def form_valid(self, form) -> HttpResponse:
         order_old = self.get_object()
@@ -283,7 +282,8 @@ class OrderUpdateView(UserPassesTestMixin, UpdateView, DietOrderView):
 
         messages.warning(self.request, "We don't delivery to this destination, it's more than 10 km")
         return render(self.request, "checkout/diet_order.html",
-                      {'form': self.form_class(self.request.POST), "api_key": GOOGLE_MAPS_API_KEY})
+                      {'form': self.form_class(self.request.POST), "api_key": GOOGLE_MAPS_API_KEY,
+                       "title": "Order Change"})
 
     def test_func(self) -> bool:
         order = self.get_object()
@@ -291,6 +291,12 @@ class OrderUpdateView(UserPassesTestMixin, UpdateView, DietOrderView):
         if not order.customer == customer:
             raise Http404("Page not found")
         return True
+
+    def get_context_data(self, **kwargs) -> None:
+        order = self.get_object()
+        context = super().get_context_data(**kwargs)
+        context["title"] = f"Change {order.name} "
+        return context
 
 
 class OrderDeleteView(DeleteView):
@@ -306,6 +312,12 @@ class OrderDeleteView(DeleteView):
             raise Http404("Page not found")
         return True
 
+    def get_context_data(self, **kwargs) -> None:
+        context = super().get_context_data(**kwargs)
+        order = self.get_object()
+        context["title"] = f"Delete {order.name}"
+        return context
+
 
 class MyOrdersHistory(ListView):
     model = OrderCheckout
@@ -318,11 +330,16 @@ class MyOrdersHistory(ListView):
 
         return OrderCheckout.objects.filter(customer=self.request.user.customer).order_by("date_of_purchase")
 
+    def get_context_data(self, **kwargs) -> None:
+        context = super().get_context_data(**kwargs)
+        context["title"] = f"{self.request.user} orders"
+        return context
+
 
 class MyOrdersHistoryDetail(DetailView):
     model = OrderCheckout
-    template_name = "checkout/detailed_orders_history.html"
     context_object_name = "checkout"
+    template_name = "checkout/detailed_orders_history.html"
 
     def test_func(self) -> Union[bool, Exception]:
         checkout = self.get_object()

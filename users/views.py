@@ -25,7 +25,7 @@ class RegisterView(View):
         if request.user.is_authenticated:
             return redirect("/")
         form = UserRegisterForm
-        return render(request, "users/register.html", {"form": form})
+        return render(request, "users/register.html", {"form": form, "title":"Register"})
 
 
 class MyLogoutView(LogoutView):

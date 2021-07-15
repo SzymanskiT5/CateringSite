@@ -1,6 +1,8 @@
 {% extends  "catering/base.html" %}
 {% block content %}
-
+{% block head %}
+    <title>{{ diet.name }}</title>
+{% endblock %}
     <article class="media content-section">
         <img class="rounded-circle" src="{{ diet.image.url }}" width="300px" height="300px" >
         <div class="media-body">

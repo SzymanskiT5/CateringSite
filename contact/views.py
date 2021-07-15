@@ -1,8 +1,8 @@
 from django.contrib import messages
 from django.http import HttpResponse
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from django.urls import reverse
-from django.views.generic import View, FormView
+from django.views.generic import FormView
 
 from .forms import ContactForm
 from .models import Contact
@@ -15,7 +15,7 @@ class ContactView(FormView):
 
 
     def get(self, request, *args, **kwargs) -> HttpResponse:
-        return render(request, "contact/contact.html", {"title": "DjangoCatering-Contact"})
+        return render(request, "contact/contact.html", {"title": "Contact"})
 
     def form_valid(self, form) -> HttpResponse:
         form.save()

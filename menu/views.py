@@ -1,9 +1,4 @@
-from django.contrib import messages
-from django.shortcuts import render, get_object_or_404, redirect
-
 from django.views.generic import DetailView, ListView, CreateView, FormView
-from django.views.generic.base import View
-
 from menu.models import Diet, DietExample
 
 

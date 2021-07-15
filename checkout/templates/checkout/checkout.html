@@ -1,7 +1,9 @@
 {% extends "catering/base.html" %}
 {% load static %}
 {% load crispy_forms_tags %}
-
+{% block head %}
+    <title>{{ title}}</title>
+{% endblock %}
 {% block content %}
     <form method="POST">
         {% csrf_token %}

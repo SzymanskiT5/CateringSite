@@ -1,5 +1,8 @@
 {% extends  "catering/base.html" %}
 {% block content %}
+    {% block head %}
+    <title> Offer </title>
+{% endblock %}
     {% for diet in diets %}
         <article class="media content-section">
             <img class="rounded-circle" src="{{ diet.image.url }} " width="300px" height="300px">

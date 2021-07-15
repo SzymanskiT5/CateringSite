@@ -24,6 +24,4 @@ class GoogleApi:
         distance = json_object['routes'][0]['legs'][0]['distance']['value']
         distance = int(distance) / 1000
 
-
-
         return distance

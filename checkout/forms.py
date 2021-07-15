@@ -2,10 +2,9 @@ import datetime
 from django import forms
 from django.contrib.auth.models import User
 from django.utils import timezone
-from checkout.models import DietOrder,  OrderCheckout
+from checkout.models import DietOrder, OrderCheckout
 import re
 from djangoProject.settings import POLISH_POST_CODE_REGEX, HOLIDAYS_POLAND
-
 
 
 class NotLoggedUserOrderCheckoutForm(forms.ModelForm):
@@ -17,10 +16,6 @@ class NotLoggedUserOrderCheckoutForm(forms.ModelForm):
     telephone = forms.NumberInput()
     email = forms.EmailField()
 
-
-
-
-
     def clean(self) -> dict:
         super().clean()
         post_code = self.cleaned_data.get("post_code")
@@ -28,21 +23,17 @@ class NotLoggedUserOrderCheckoutForm(forms.ModelForm):
         if not re.match(POLISH_POST_CODE_REGEX, post_code):
             self._errors["post_code"] = self.error_class(["Invalid postcode format"])
 
-        # user = User.objects.filter(email=email)
-        # if user:
-        #     self._errors["email"] = self.error_class(["There is logged user with this email, please log in"])
+        user = User.objects.filter(email=email)
+        if user:
+            self._errors["email"] = self.error_class(["There is logged user with this email, please log in"])
 
         return self.cleaned_data
-
 
     class Meta:
         model = OrderCheckout
 
         fields = ["email", "surname", "name", "telephone", "address", "address_info", "locality", "state", "post_code",
                   "payment_method", "note"]
-
-
-
 
 
 class LoggedUserOrderCheckoutForm(forms.ModelForm):
@@ -53,8 +44,6 @@ class LoggedUserOrderCheckoutForm(forms.ModelForm):
     payment_method = forms.ChoiceField(choices=PAYMENT_CHOICE)
     telephone = forms.NumberInput()
 
-
-
     def clean(self) -> dict:
         super().clean()
         post_code = self.cleaned_data.get("post_code")
@@ -65,10 +54,8 @@ class LoggedUserOrderCheckoutForm(forms.ModelForm):
     class Meta:
         model = OrderCheckout
 
-        fields = [ "surname", "name", "telephone", "address", "address_info", "locality", "state", "post_code",
+        fields = ["surname", "name", "telephone", "address", "address_info", "locality", "state", "post_code",
                   "payment_method", "note"]
-
-
 
 
 class DateInput(forms.DateInput):
@@ -93,11 +80,6 @@ class DietOrderForm(forms.ModelForm):
         date_of_start = self.cleaned_data.get("date_of_start")
         date_of_end = self.cleaned_data.get("date_of_end")
         post_code = self.cleaned_data.get("post_code")
-
-
-
-
-
 
         if date_of_start < timezone.now().date() or date_of_start - timezone.now().date() <= datetime.timedelta(days=3):
             self._errors['date_of_start'] = self.error_class([
