@@ -1,14 +1,10 @@
 from django.contrib import messages
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
-from django.urls import reverse
+
 from django.views.generic.base import View
 from users.forms import UserRegisterForm, MyPasswordResetForm
 from django.contrib.auth.views import LogoutView, PasswordResetView
-
-
-# from users.models import Customer
-
 
 class RegisterView(View):
 

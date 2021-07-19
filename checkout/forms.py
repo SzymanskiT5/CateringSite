@@ -73,14 +73,10 @@ class DietOrderForm(forms.ModelForm):
     )
 
     megabytes = forms.ChoiceField(choices=MEGABYTES_CHOICE)
-
-    def clean(self) -> dict:
-        super().clean()
+    def validate_dates(self):
 
         date_of_start = self.cleaned_data.get("date_of_start")
         date_of_end = self.cleaned_data.get("date_of_end")
-        post_code = self.cleaned_data.get("post_code")
-
         if date_of_start < timezone.now().date() or date_of_start - timezone.now().date() <= datetime.timedelta(days=3):
             self._errors['date_of_start'] = self.error_class([
                 'Date cannot be from past!\n'
@@ -104,9 +100,17 @@ class DietOrderForm(forms.ModelForm):
         if date_of_end < date_of_start:
             self._errors["date_of_end"] = self.error_class(["End of diet cannot be earlier than start"])
 
+
+
+    def validate_post_code(self):
+        post_code = self.cleaned_data.get("post_code")
         if not re.match(POLISH_POST_CODE_REGEX, post_code):
             self._errors["post_code"] = self.error_class(["Invalid postcode format"])
 
+    def clean(self) -> dict:
+        super().clean()
+        self.validate_dates()
+        self.validate_post_code()
         return self.cleaned_data
 
     class Meta:

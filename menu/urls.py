@@ -1,5 +1,4 @@
-from django.urls import path, include
-
+from django.urls import path
 from menu.views import MenuDetailView, MenuListView
 
 urlpatterns = [

@@ -1,4 +1,4 @@
-from django.views.generic import DetailView, ListView, CreateView, FormView
+from django.views.generic import DetailView, ListView
 from menu.models import Diet, DietExample
 
 

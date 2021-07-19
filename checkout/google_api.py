@@ -4,7 +4,7 @@ from djangoProject.settings import GOOGLE_MAPS_API_KEY, CATERING_PLACE_ID
 
 
 class GoogleApi:
-
+    """Calculating distance between catering and order destination"""
     @staticmethod
     def get_place_id(address, address_info) -> str:
         parameters = {"input": address + " " + address_info, "key": GOOGLE_MAPS_API_KEY}

@@ -11,9 +11,6 @@ from .models import Contact
 class ContactView(FormView):
     form_class = ContactForm
     model = Contact
-
-
-
     def get(self, request, *args, **kwargs) -> HttpResponse:
         return render(request, "contact/contact.html", {"title": "Contact"})
 
@@ -21,7 +18,6 @@ class ContactView(FormView):
         form.save()
         messages.success(self.request, f"Thank you. We will response as soon as possible!")
         return super().form_valid(form)
-
 
     def form_invalid(self, form) -> HttpResponse:
         return render(self.request, "contact/contact.html",

@@ -96,7 +96,9 @@ class DietOrder(models.Model):
 
     def check_if_order_is_up_to_date(self) -> None:
         if self.date_of_start - timezone.now().date() <= datetime.timedelta(days=3):
+
             self.is_up_to_date = False
+
 
     def get_absolute_url(self) -> str:
         return reverse("cart", kwargs={"pk": self.pk, "user": self.customer})

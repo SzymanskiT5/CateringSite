@@ -2,9 +2,8 @@ from typing import Union
 from django.core.mail import EmailMessage
 from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin
-from django.contrib.auth.models import User
 from django.db.models import Sum
-from django.http import Http404, HttpResponse, HttpResponseRedirect, HttpResponsePermanentRedirect, JsonResponse
+from django.http import Http404, HttpResponse
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views.generic import ListView, UpdateView, DeleteView, CreateView, DetailView
@@ -14,12 +13,10 @@ from checkout.google_api import GoogleApi
 from checkout.models import DietOrder, RegistrationPrzelewy24
 from djangoProject.settings import GOOGLE_MAPS_API_KEY, ACCOUNT_NUMBER
 from menu.models import Diet
-from django.core.mail import send_mail
 import requests
 from users.models import Customer
 from .serializers import RegistrationPrzelewy24Serializer
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+
 
 
 def get_or_create_customer_by_cookies(request) -> Customer:
@@ -47,23 +44,25 @@ def get_customer(request) -> Customer:
     else:
         return get_customer_by_cookies(request)
 
+def check_dates_up_to_date(request):
+    customer = get_customer_or_create(request)
+    diets = DietOrder.objects.filter(customer=customer).filter(is_purchased=False).order_by(
+        "-to_pay")
+
+    for diet in diets:
+        diet.check_if_order_is_up_to_date()
+        diet.save()
+
+    return diets
+
 
 class CartView(ListView):
     model = DietOrder
     template_name = "checkout/cart.html"
     context_object_name = "orders"
 
-    def check_dates_up_to_date(self) -> None:
-        customer = get_customer_or_create(self.request)
-        diets = DietOrder.objects.filter(customer=customer).filter(is_purchased=False).order_by(
-            "-to_pay")
-
-        for diet in diets:
-            diet.check_if_order_is_up_to_date()
-        return diets
-
     def get_queryset(self) -> None:
-        diets = self.check_dates_up_to_date()
+        diets = check_dates_up_to_date(self.request)
         return diets
 
     def get_context_data(self, **kwargs) -> None:
@@ -119,6 +118,8 @@ class CheckoutView(UserPassesTestMixin, CreateView):
         return self.checkout_transfer(checkout_order)
 
     def checkout_przelewy24(self, checkout_order):
+        """It won't work correctly because we don't have P24 account, it is just first step simulation"""
+
         object_przelewy24 = self.create_przelewy24_object(checkout_order)
         json_przelewy24 = RegistrationPrzelewy24Serializer(object_przelewy24)
         response = requests.post("https://secure.przelewy24.pl/api/v1/transaction/register",
@@ -185,11 +186,9 @@ class CheckoutView(UserPassesTestMixin, CreateView):
             is_purchased=True)
 
     def test_func(self) -> bool:
-        diets = self.get_diets_and_check_up_to_date()
+        diets = check_dates_up_to_date(self.request)
         customer = get_customer_or_create(self.request)
-        diets_out_of_date = DietOrder.objects.filter(customer=customer).filter(
-            is_up_to_date=False)
-
+        diets_out_of_date = DietOrder.objects.filter(customer=customer).filter(is_up_to_date=False)
         if diets_out_of_date:
             messages.warning(self.request, "Delete or change out of date orders")
             return False
@@ -200,13 +199,7 @@ class CheckoutView(UserPassesTestMixin, CreateView):
 
         return True
 
-    def get_diets_and_check_up_to_date(self) -> None:
-        customer = get_customer_or_create(self.request)
-        diets = DietOrder.objects.filter(customer=customer).filter(is_purchased=False)
 
-        for diet in diets:
-            diet.check_if_order_is_up_to_date()
-        return diets
 
     def handle_no_permission(self) -> HttpResponse:
         return redirect('cart')
