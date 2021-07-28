@@ -120,7 +120,7 @@ This is how it looks like if you choose Przelewy24 payment:
 ##Tests:
 Test will be included in a future
 
-## Checkout
+## Contact form
 
 There is also contact form, user can ask questions about catering.
 ![image](https://user-images.githubusercontent.com/79137973/127300465-c8ed3ab3-d277-4df7-a07d-2dcb6eb33439.png)
