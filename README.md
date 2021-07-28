@@ -83,22 +83,23 @@ Just pass email password and address to Dockerfile, be sure that your email acco
 
 ## Diets offer:
 My site has 3 diets included, admin can extend the offer if it's necessary.
-![img.png](img.png)
+![img](https://user-images.githubusercontent.com/79137973/127300144-52edbb40-6ad7-4ff4-a628-ac2ca7cf42cd.png)
+
 ## Order history:
 
 Logged user has ability to check, his orders history
-![img_1.png](img_1.png)
+![img_1](https://user-images.githubusercontent.com/79137973/127300179-df01ff62-0f9b-4000-b409-c23db5a623e2.png)
+
 
 
 ## Cart
 Every order is collected in a cart:
 
-![img_2.png](img_2.png)
+![img_2](https://user-images.githubusercontent.com/79137973/127300238-6a637afd-e9ed-407f-bff3-692599214a25.png)
 
 
 If diet is out of date, it shows a message, that user should change it.
-
-![img_3.png](img_3.png)
+![img_3](https://user-images.githubusercontent.com/79137973/127300272-12f527d1-e70d-4974-8c21-7e38ded16522.png)
 ## Checkout
 
 There are two terms, to make a checkout:
@@ -113,13 +114,16 @@ that system sends email to user.
 I made registration request to Przelewy24, but it can't be finalised without Przelewy24 shop account, but serializer looks working good ;)
 This is how it looks like if you choose Przelewy24 payment:
 
-![img_4.png](img_4.png)
+![img_4](https://user-images.githubusercontent.com/79137973/127300308-fbb55f1f-f2f2-4bff-a176-02fef5b61f50.png)
 
 
 ##Tests:
 Test will be included in a future
 
+## Checkout
 
+There is also contact form, user can ask questions about catering.
+![image](https://user-images.githubusercontent.com/79137973/127300465-c8ed3ab3-d277-4df7-a07d-2dcb6eb33439.png)
 
 
 ENJOY!
